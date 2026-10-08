@@ -4,10 +4,15 @@ window.HEBOOKS_CONFIG = {
   price: 29.90,
   currency: "BRL",
 
-  // Depois de publicar a Edge Function, cole aqui a URL dela.
-  // Exemplo: https://SEU-PROJETO.supabase.co/functions/v1/h-ebooks
-  apiUrl: "",
+  // Cole aqui o Link de Pagamento criado no app/site do Mercado Pago.
+  mercadoPagoPaymentLink: "",
 
-  // Intervalo de consulta do pagamento em milissegundos.
-  paymentPollMs: 5000
+  // Dados públicos que devem aparecer no comprovante.
+  expectedRecipient: "",
+  expectedPixKey: "",
+
+  // Endpoint seguro que recebe o comprovante, valida e devolve:
+  // { approved: true, downloadUrl: "https://..." }
+  // O PDF NÃO deve ficar em um repositório público.
+  receiptVerifierUrl: ""
 };
