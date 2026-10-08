@@ -64,6 +64,7 @@
     wrap.append(avatar, body);
     chatWindow.appendChild(wrap);
     chatWindow.scrollTop = chatWindow.scrollHeight;
+    return p;
   }
 
   buyButton.addEventListener("click", openModal);
@@ -87,18 +88,40 @@
   paymentDoneButton.addEventListener("click", () => show(botView));
   backToPayment.addEventListener("click", () => show(paymentView));
 
-  async function verifyReceipt(formData) {
-    if (!config.receiptVerifierUrl) {
-      throw new Error("O verificador seguro ainda está sendo conectado. Seu comprovante não será aprovado automaticamente até o backend ficar ativo.");
-    }
-    const response = await fetch(config.receiptVerifierUrl, { method: "POST", body: formData });
+  async function sha256(file) {
+    const buffer = await file.arrayBuffer();
+    const digest = await crypto.subtle.digest("SHA-256", buffer);
+    return [...new Uint8Array(digest)].map(b => b.toString(16).padStart(2, "0")).join("");
+  }
+
+  async function readReceipt(file, progressElement) {
+    if (!window.Tesseract) throw new Error("O leitor do comprovante não carregou. Atualize a página e tente novamente.");
+    const result = await Tesseract.recognize(file, "por", {
+      logger: m => {
+        if (m.status === "recognizing text") {
+          const pct = Math.max(1, Math.round((m.progress || 0) * 100));
+          progressElement.textContent = "Lendo o comprovante... " + pct + "%";
+        }
+      }
+    });
+    return result?.data?.text || "";
+  }
+
+  async function verifyReceipt(payload) {
+    if (!config.receiptVerifierUrl) throw new Error("O verificador seguro ainda não está configurado.");
+    const response = await fetch(config.receiptVerifierUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) throw new Error(data.error || "Não foi possível validar o comprovante.");
+    if (!response.ok) throw new Error(data.reason || data.error || "Não foi possível validar o comprovante.");
     return data;
   }
 
   receiptForm.addEventListener("submit", async e => {
     e.preventDefault();
+
     const name = document.getElementById("buyer-name").value.trim();
     const email = document.getElementById("buyer-email").value.trim();
     const file = document.getElementById("receipt-file").files[0];
@@ -108,11 +131,12 @@
       return;
     }
 
-    const allowed = ["image/png", "image/jpeg", "image/webp", "application/pdf"];
+    const allowed = ["image/png", "image/jpeg", "image/webp"];
     if (!allowed.includes(file.type)) {
-      botMessage("Envie o comprovante em PDF, PNG, JPG ou WEBP.");
+      botMessage("Para a análise automática, envie uma imagem PNG, JPG ou WEBP do comprovante.");
       return;
     }
+
     if (file.size > 10 * 1024 * 1024) {
       botMessage("O comprovante deve ter no máximo 10 MB.");
       return;
@@ -120,28 +144,32 @@
 
     verifyButton.disabled = true;
     verifyButton.textContent = "Analisando...";
-    botMessage("Recebi o comprovante. Estou conferindo valor, beneficiário, data e identificador da transação...");
-
-    const formData = new FormData();
-    formData.append("receipt", file);
-    formData.append("name", name);
-    formData.append("email", email);
-    formData.append("productId", config.productId || "");
-    formData.append("expectedAmount", String(config.price || ""));
-    formData.append("expectedRecipient", config.expectedRecipient || "");
-    formData.append("expectedPixKey", config.expectedPixKey || "");
+    const progress = botMessage("Preparando a leitura do comprovante...");
 
     try {
-      const data = await verifyReceipt(formData);
+      const [receiptHash, ocrText] = await Promise.all([
+        sha256(file),
+        readReceipt(file, progress)
+      ]);
+
+      progress.textContent = "Leitura concluída. Conferindo valor, beneficiário, data e identificador da transação...";
+
+      const data = await verifyReceipt({
+        name,
+        email,
+        receiptHash,
+        ocrText
+      });
+
       if (data.approved === true && data.downloadUrl) {
-        botMessage("Pagamento aprovado. Os dados obrigatórios conferem.", "ok");
+        botMessage("Pagamento aprovado. O comprovante passou pelas verificações obrigatórias.", "ok");
         downloadButton.href = data.downloadUrl;
         setTimeout(() => show(successView), 700);
       } else {
         botMessage((data.reason || "Não consegui confirmar todos os dados do pagamento.") + " O eBook não será liberado.");
       }
     } catch (error) {
-      botMessage(error.message);
+      botMessage(error.message || "Falha ao analisar o comprovante.");
     } finally {
       verifyButton.disabled = false;
       verifyButton.textContent = "Enviar para análise";
