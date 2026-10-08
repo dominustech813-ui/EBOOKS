@@ -8,5 +8,6 @@ window.HEBOOKS_CONFIG = {
   expectedRecipient: "Theo",
   expectedPixKey: "64580417f-ea3b-4d08-b158-00e5605f0cdf",
 
-  receiptVerifierUrl: "https://faoasptdjhdtonnvflbd.supabase.co/functions/v1/receipt-verifier"
+  receiptVerifierUrl: "https://faoasptdjhdtonnvflbd.supabase.co/functions/v1/receipt-verifier",
+  supportApiUrl: "https://faoasptdjhdtonnvflbd.supabase.co/functions/v1/support-api"
 };
