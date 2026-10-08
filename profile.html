@@ -66,8 +66,19 @@
 
         <section id="payments" class="panel">
           <h2>Pagamentos</h2>
-          <div class="info-card"><strong>Modo atual</strong><p class="muted">Pix de R$ 29,90 + análise do comprovante enviado pelo comprador.</p></div>
-          <div class="info-card"><strong>Próxima evolução</strong><p class="muted">Quando houver uma conta com Mercado Pago Developers habilitado, poderemos consultar pagamentos oficiais e liberar o eBook pelo status aprovado, sem depender da imagem do comprovante.</p></div>
+          <div class="info-card"><strong>Mercado Pago automático</strong><p class="muted">Configure aqui as credenciais de teste. Elas são enviadas diretamente ao backend e armazenadas no Supabase Vault; não ficam no GitHub.</p></div>
+          <div id="mp-status" class="info-card"><strong>Status</strong><p class="muted">Carregando...</p></div>
+          <form id="mp-config-form">
+            <label>Access Token de teste
+              <input id="mp-access-token" type="password" autocomplete="off" placeholder="APP_USR-..." required>
+            </label>
+            <label>Assinatura secreta do Webhook
+              <input id="mp-webhook-secret" type="password" autocomplete="off" placeholder="Cole a assinatura secreta" required>
+            </label>
+            <button class="primary" id="mp-save" type="submit">Salvar configuração de teste</button>
+            <p id="mp-msg" class="muted"></p>
+          </form>
+          <div class="info-card"><strong>Importante</strong><p class="muted">Use apenas as credenciais de teste nesta etapa. As credenciais produtivas serão configuradas somente depois que o fluxo Pix + Webhook passar nos testes.</p></div>
         </section>
 
         <section id="security" class="panel">
@@ -81,13 +92,17 @@
 
 <script>
 const API="https://faoasptdjhdtonnvflbd.supabase.co/functions/v1/support-api";
+const MP_CONFIG_API="https://faoasptdjhdtonnvflbd.supabase.co/functions/v1/mercadopago-config";
 let adminCode="";
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]));
 async function api(body){const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Erro");return d}
-function openPanel(id){document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.panel===id));if(id==="support")load()}
+function openPanel(id){document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.panel===id));if(id==="support")load();if(id==="payments")loadMpStatus()}
 document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>openPanel(b.dataset.panel));
 async function load(){const box=document.getElementById("tickets");box.innerHTML="Carregando...";try{const d=await api({action:"admin-list",adminCode,status:document.getElementById("filter").value});box.innerHTML=d.tickets.length?"":"Nenhum atendimento encontrado.";d.tickets.forEach(t=>{const el=document.createElement("div");el.className="ticket";const emailState=t.email_notified?'<span class="ok">E-mail enviado</span>':'<span class="warn">E-mail pendente</span>';el.innerHTML='<div class="ticket-head"><strong>'+esc(t.ticket_code)+'</strong><span class="badge '+(t.status==="OPEN"?"open":"closed")+'">'+esc(t.status)+'</span></div><div class="meta">'+esc(t.buyer_name)+' • '+esc(t.buyer_email)+' • '+new Date(t.created_at).toLocaleString("pt-BR")+' • '+emailState+'</div><div class="problem">'+esc(t.problem)+'</div>'+(t.status==="OPEN"?'<div class="close-box"><textarea placeholder="Motivo do encerramento"></textarea><button class="danger">Encerrar atendimento</button></div>':'<div class="meta"><strong>Motivo:</strong> '+esc(t.close_reason||"")+'</div>');if(t.status==="OPEN"){const ta=el.querySelector("textarea"),bt=el.querySelector(".danger");bt.onclick=async()=>{const reason=ta.value.trim();if(reason.length<3){alert("Informe o motivo.");return}bt.disabled=true;try{await api({action:"admin-close",adminCode,ticketCode:t.ticket_code,reason});await load()}catch(e){alert(e.message);bt.disabled=false}}}box.appendChild(el)});}catch(e){box.innerHTML='<p style="color:#a22">'+esc(e.message)+'</p>'}}
 document.getElementById("login-btn").onclick=async()=>{adminCode=document.getElementById("admin-code").value.trim();try{await api({action:"admin-list",adminCode,status:"OPEN"});document.getElementById("login").style.display="none";document.getElementById("private-area").style.display="block";sessionStorage.setItem("h_profile_admin",adminCode)}catch(e){document.getElementById("login-msg").textContent=e.message}};
+async function mpApi(body){const r=await fetch(MP_CONFIG_API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Erro");return d}
+async function loadMpStatus(){const box=document.getElementById("mp-status");try{const d=await mpApi({action:"status",adminCode});box.innerHTML="<strong>Status</strong><p class='muted'>Access Token de teste: <b>"+(d.testAccessTokenConfigured?"configurado":"pendente")+"</b><br>Webhook secreto: <b>"+(d.testWebhookSecretConfigured?"configurado":"pendente")+"</b></p>"}catch(e){box.innerHTML="<strong>Status</strong><p class='muted'>"+esc(e.message)+"</p>"}}
+document.getElementById("mp-config-form").onsubmit=async e=>{e.preventDefault();const btn=document.getElementById("mp-save"),msg=document.getElementById("mp-msg");btn.disabled=true;btn.textContent="Salvando...";msg.textContent="";try{const accessToken=document.getElementById("mp-access-token").value.trim();const webhookSecret=document.getElementById("mp-webhook-secret").value.trim();const d=await mpApi({action:"save-test-config",adminCode,accessToken,webhookSecret});msg.textContent=d.message;document.getElementById("mp-access-token").value="";document.getElementById("mp-webhook-secret").value="";await loadMpStatus()}catch(e){msg.textContent=e.message}finally{btn.disabled=false;btn.textContent="Salvar configuração de teste"}};
 document.getElementById("refresh").onclick=load;document.getElementById("filter").onchange=load;
 const saved=sessionStorage.getItem("h_profile_admin");if(saved){adminCode=saved;document.getElementById("admin-code").value=saved;document.getElementById("login-btn").click()}
 </script>
