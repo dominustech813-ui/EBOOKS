@@ -1,0 +1,34 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>H ebooks | Enviar eBook</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f6f4ff;color:#1d1a2d;padding:28px}
+    .card{max-width:560px;margin:40px auto;background:#fff;border-radius:26px;padding:30px;box-shadow:0 20px 70px rgba(70,50,150,.16)}
+    .brand{font-weight:900;font-size:25px;margin-bottom:22px}.brand span{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#5b3df5;color:#fff;margin-right:8px}
+    h1{font-size:30px;margin:0 0 10px}.muted{color:#6e697d;line-height:1.55}.info{background:#f2efff;border:1px solid #e6e0ff;border-radius:16px;padding:16px;margin:20px 0}
+    label{display:block;font-weight:800;font-size:13px;margin:16px 0 7px}input{width:100%;padding:14px;border:1px solid #ddd8ed;border-radius:12px;background:#fff;font:inherit}
+    button{width:100%;border:0;border-radius:14px;padding:16px;background:#5b3df5;color:#fff;font-weight:900;font-size:16px;cursor:pointer;margin-top:20px}
+    small{display:block;margin-top:14px;color:#777;line-height:1.45}.back{display:block;text-align:center;margin-top:18px;color:#5b3df5;text-decoration:none;font-weight:800}
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="brand"><span>H</span>ebooks</div>
+    <h1>Enviar o eBook com segurança</h1>
+    <p class="muted">Selecione o PDF original. Ele será enviado para o armazenamento privado usado na entrega após a validação do pagamento.</p>
+    <div class="info"><strong>Arquivo esperado:</strong><br>Atividades Físicas: Guia Definitivo para Escolher a Melhor para Você</div>
+    <form action="https://faoasptdjhdtonnvflbd.supabase.co/functions/v1/ebook-admin-upload" method="post" enctype="multipart/form-data">
+      <label>Código de segurança</label>
+      <input name="code" required placeholder="Digite o código informado">
+      <label>PDF do eBook</label>
+      <input type="file" name="ebook" accept="application/pdf" required>
+      <button type="submit">Enviar eBook</button>
+    </form>
+    <small>Use apenas o PDF original. O arquivo não ficará público no GitHub.</small>
+    <a class="back" href="./">← Voltar para H ebooks</a>
+  </div>
+</body>
+</html>
