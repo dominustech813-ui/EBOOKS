@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>H ebooks | Meu perfil</title>
+  <style>
+    *{box-sizing:border-box}body{margin:0;font-family:Arial,sans-serif;background:#f6f4ff;color:#191725}
+    .top{background:#171625;color:#fff;padding:10px 20px;text-align:center;font-size:13px;font-weight:700}
+    .nav{max-width:1100px;margin:auto;padding:20px;display:flex;justify-content:space-between;align-items:center}
+    .brand{font-weight:900;font-size:24px}.brand span{display:inline-grid;place-items:center;width:38px;height:38px;border-radius:12px;background:#5b3df5;color:#fff;margin-right:8px}
+    a{text-decoration:none;color:inherit}.back{font-weight:800;color:#5b3df5}
+    .wrap{max-width:1100px;margin:20px auto 60px;padding:0 20px}
+    .hero{background:linear-gradient(135deg,#5b3df5,#31208f);color:#fff;border-radius:28px;padding:32px;margin-bottom:22px}
+    .hero h1{margin:0 0 8px;font-size:36px}.hero p{margin:0;color:#e4ddff}
+    .grid{display:grid;grid-template-columns:280px 1fr;gap:20px}.card{background:#fff;border-radius:22px;padding:22px;box-shadow:0 16px 50px rgba(60,45,130,.10)}
+    .menu button{width:100%;text-align:left;border:0;background:#f7f5ff;padding:13px 14px;border-radius:12px;margin-bottom:9px;font-weight:800;color:#29233e;cursor:pointer}
+    .menu button.active{background:#5b3df5;color:#fff}.menu small{display:block;color:#777;line-height:1.5;margin-top:14px}
+    .panel{display:none}.panel.active{display:block}.login-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
+    label{display:block;font-weight:800;font-size:13px;margin-bottom:7px}input,select,textarea{width:100%;padding:12px;border:1px solid #ddd8ed;border-radius:10px;font:inherit}
+    button.primary{border:0;border-radius:10px;padding:12px 16px;background:#5b3df5;color:#fff;font-weight:800;cursor:pointer}
+    .toolbar{display:flex;gap:10px;margin:18px 0;flex-wrap:wrap}.tickets{display:grid;gap:14px}.ticket{border:1px solid #e8e4f2;border-radius:16px;padding:18px}
+    .ticket-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.badge{padding:5px 9px;border-radius:999px;font-size:12px;font-weight:800}
+    .open{background:#fff0c7;color:#745400}.closed{background:#e6f6eb;color:#1f6d3a}.meta{font-size:13px;color:#6d687b;margin:8px 0}.problem{background:#f8f7fc;border-radius:10px;padding:12px;white-space:pre-wrap}
+    .close-box{margin-top:12px}.close-box textarea{min-height:70px;margin-bottom:8px}.danger{border:0;border-radius:10px;padding:11px 15px;background:#8f2d3d;color:#fff;font-weight:800;cursor:pointer}
+    .info-card{background:#f7f5ff;border:1px solid #e5dfff;border-radius:16px;padding:16px;margin:14px 0}.muted{color:#6d687b}.ok{color:#1f7a43;font-weight:700}.warn{color:#a56600;font-weight:700}
+    @media(max-width:780px){.grid{grid-template-columns:1fr}.login-row{grid-template-columns:1fr}.hero h1{font-size:30px}}
+  </style>
+</head>
+<body>
+<div class="top">H ebooks • Área do administrador</div>
+<div class="nav"><a class="brand" href="./"><span>H</span>ebooks</a><a class="back" href="./">← Voltar para a loja</a></div>
+<div class="wrap">
+  <section class="hero"><h1>Meu perfil</h1><p>Gerencie suporte, pagamentos e configurações do H ebooks em um só lugar.</p></section>
+
+  <div class="grid">
+    <aside class="card menu">
+      <button class="tab active" data-panel="overview">Visão geral</button>
+      <button class="tab" data-panel="support">Atendimentos</button>
+      <button class="tab" data-panel="payments">Pagamentos</button>
+      <button class="tab" data-panel="security">Segurança</button>
+      <small>Esta área é protegida pelo código administrativo do H ebooks.</small>
+    </aside>
+
+    <main class="card">
+      <div id="login">
+        <h2>Acessar meu perfil</h2>
+        <p class="muted">Digite seu código administrativo para abrir as funções privadas.</p>
+        <div class="login-row"><div><label>Código administrativo</label><input id="admin-code" type="password" placeholder="Digite seu código"></div><button class="primary" id="login-btn">Entrar</button></div>
+        <p id="login-msg"></p>
+      </div>
+
+      <div id="private-area" style="display:none">
+        <section id="overview" class="panel active">
+          <h2>Visão geral</h2>
+          <div class="info-card"><strong>Suporte humano</strong><p class="muted">Veja chamados abertos e encerrados e registre o motivo do fechamento.</p></div>
+          <div class="info-card"><strong>Validação de pagamento</strong><p class="muted">Hoje o H ebooks usa o comprovante + OCR + regras antifraude. A integração bancária oficial depende de acesso à API do meio de pagamento.</p></div>
+          <div class="info-card"><strong>Entrega do eBook</strong><p class="muted">O PDF permanece privado e o link de acesso é temporário.</p></div>
+        </section>
+
+        <section id="support" class="panel">
+          <h2>Atendimentos</h2>
+          <div class="toolbar"><select id="filter"><option value="OPEN">Abertos</option><option value="CLOSED">Encerrados</option><option value="ALL">Todos</option></select><button class="primary" id="refresh">Atualizar</button></div>
+          <div id="tickets" class="tickets"></div>
+        </section>
+
+        <section id="payments" class="panel">
+          <h2>Pagamentos</h2>
+          <div class="info-card"><strong>Modo atual</strong><p class="muted">Pix de R$ 29,90 + análise do comprovante enviado pelo comprador.</p></div>
+          <div class="info-card"><strong>Próxima evolução</strong><p class="muted">Quando houver uma conta com Mercado Pago Developers habilitado, poderemos consultar pagamentos oficiais e liberar o eBook pelo status aprovado, sem depender da imagem do comprovante.</p></div>
+        </section>
+
+        <section id="security" class="panel">
+          <h2>Segurança</h2>
+          <div class="info-card"><strong>Proteções ativas</strong><p class="muted">Bloqueio de comprovante repetido, bloqueio de ID/E2E repetido, limitação de tentativas e arquivo do eBook em armazenamento privado.</p></div>
+        </section>
+      </div>
+    </main>
+  </div>
+</div>
+
+<script>
+const API="https://faoasptdjhdtonnvflbd.supabase.co/functions/v1/support-api";
+let adminCode="";
+const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]));
+async function api(body){const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Erro");return d}
+function openPanel(id){document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));document.getElementById(id).classList.add("active");document.querySelectorAll(".tab").forEach(b=>b.classList.toggle("active",b.dataset.panel===id));if(id==="support")load()}
+document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>openPanel(b.dataset.panel));
+async function load(){const box=document.getElementById("tickets");box.innerHTML="Carregando...";try{const d=await api({action:"admin-list",adminCode,status:document.getElementById("filter").value});box.innerHTML=d.tickets.length?"":"Nenhum atendimento encontrado.";d.tickets.forEach(t=>{const el=document.createElement("div");el.className="ticket";const emailState=t.email_notified?'<span class="ok">E-mail enviado</span>':'<span class="warn">E-mail pendente</span>';el.innerHTML='<div class="ticket-head"><strong>'+esc(t.ticket_code)+'</strong><span class="badge '+(t.status==="OPEN"?"open":"closed")+'">'+esc(t.status)+'</span></div><div class="meta">'+esc(t.buyer_name)+' • '+esc(t.buyer_email)+' • '+new Date(t.created_at).toLocaleString("pt-BR")+' • '+emailState+'</div><div class="problem">'+esc(t.problem)+'</div>'+(t.status==="OPEN"?'<div class="close-box"><textarea placeholder="Motivo do encerramento"></textarea><button class="danger">Encerrar atendimento</button></div>':'<div class="meta"><strong>Motivo:</strong> '+esc(t.close_reason||"")+'</div>');if(t.status==="OPEN"){const ta=el.querySelector("textarea"),bt=el.querySelector(".danger");bt.onclick=async()=>{const reason=ta.value.trim();if(reason.length<3){alert("Informe o motivo.");return}bt.disabled=true;try{await api({action:"admin-close",adminCode,ticketCode:t.ticket_code,reason});await load()}catch(e){alert(e.message);bt.disabled=false}}}box.appendChild(el)});}catch(e){box.innerHTML='<p style="color:#a22">'+esc(e.message)+'</p>'}}
+document.getElementById("login-btn").onclick=async()=>{adminCode=document.getElementById("admin-code").value.trim();try{await api({action:"admin-list",adminCode,status:"OPEN"});document.getElementById("login").style.display="none";document.getElementById("private-area").style.display="block";sessionStorage.setItem("h_profile_admin",adminCode)}catch(e){document.getElementById("login-msg").textContent=e.message}};
+document.getElementById("refresh").onclick=load;document.getElementById("filter").onchange=load;
+const saved=sessionStorage.getItem("h_profile_admin");if(saved){adminCode=saved;document.getElementById("admin-code").value=saved;document.getElementById("login-btn").click()}
+</script>
+</body></html>
