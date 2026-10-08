@@ -4,15 +4,11 @@ window.HEBOOKS_CONFIG = {
   price: 29.90,
   currency: "BRL",
 
-  // Cole aqui o Link de Pagamento criado no app/site do Mercado Pago.
-  mercadoPagoPaymentLink: "",
+  // Pix gerado no Mercado Pago para esta venda.
+  pixPayload: "00020126580014br.gov.bcb.pix01364580417f-ea3b-4d08-b158-00e5605f0cdf520400005303986540529.905802BR5904Theo6009Sao Paulo62240520daqr241002343908746763047714",
+  expectedRecipient: "Theo",
+  expectedPixKey: "64580417f-ea3b-4d08-b158-00e5605f0cdf",
 
-  // Dados públicos que devem aparecer no comprovante.
-  expectedRecipient: "",
-  expectedPixKey: "",
-
-  // Endpoint seguro que recebe o comprovante, valida e devolve:
-  // { approved: true, downloadUrl: "https://..." }
-  // O PDF NÃO deve ficar em um repositório público.
+  // Será preenchido quando o backend seguro do verificador for publicado.
   receiptVerifierUrl: ""
 };
