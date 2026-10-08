@@ -4,26 +4,30 @@
 
   const modal = document.getElementById("checkout-modal");
   const buyButton = document.getElementById("buy-button");
-  const form = document.getElementById("checkout-form");
-  const formMessage = document.getElementById("form-message");
-  const formView = document.getElementById("checkout-form-view");
-  const pixView = document.getElementById("pix-view");
+  const paymentView = document.getElementById("payment-view");
+  const botView = document.getElementById("receipt-bot-view");
   const successView = document.getElementById("success-view");
-  const qrImage = document.getElementById("qr-image");
-  const pixCode = document.getElementById("pix-code");
-  const copyPix = document.getElementById("copy-pix");
-  const generatePix = document.getElementById("generate-pix");
-  const statusText = document.getElementById("payment-status-text");
+  const paymentButton = document.getElementById("mercado-pago-button");
+  const paymentDoneButton = document.getElementById("payment-done-button");
+  const paymentMessage = document.getElementById("payment-message");
+  const receiptForm = document.getElementById("receipt-form");
+  const verifyButton = document.getElementById("verify-button");
+  const backToPayment = document.getElementById("back-to-payment");
+  const chatWindow = document.getElementById("chat-window");
   const downloadButton = document.getElementById("download-button");
-
-  let currentPaymentId = null;
-  let pollTimer = null;
 
   document.getElementById("year").textContent = new Date().getFullYear();
   document.getElementById("product-price").textContent = money.format(config.price || 0);
   document.getElementById("checkout-price").textContent = money.format(config.price || 0);
 
+  function show(view) {
+    [paymentView, botView, successView].forEach(el => el.classList.add("hidden"));
+    view.classList.remove("hidden");
+  }
+
   function openModal() {
+    show(paymentView);
+    paymentMessage.textContent = "";
     modal.classList.add("active");
     modal.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
@@ -35,122 +39,110 @@
     document.body.style.overflow = "";
   }
 
-  function show(view) {
-    [formView, pixView, successView].forEach(el => el.classList.add("hidden"));
-    view.classList.remove("hidden");
-  }
-
-  function setMessage(message, isError = false) {
-    formMessage.textContent = message || "";
-    formMessage.classList.toggle("error", isError);
-  }
-
-  function normalizeDocument(value) {
-    return String(value || "").replace(/\D/g, "");
-  }
-
-  async function api(payload) {
-    if (!config.apiUrl) {
-      throw new Error("A integração Pix ainda não foi conectada. Configure a URL da API no arquivo config.js.");
-    }
-
-    const response = await fetch(config.apiUrl, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      throw new Error(data.error || "Não foi possível concluir a operação.");
-    }
-    return data;
-  }
-
-  async function checkPayment() {
-    if (!currentPaymentId) return;
-
-    try {
-      const data = await api({ action: "status", paymentId: currentPaymentId });
-      const paidStatuses = ["RECEIVED", "CONFIRMED", "RECEIVED_IN_CASH"];
-
-      if (paidStatuses.includes(data.status)) {
-        clearInterval(pollTimer);
-        pollTimer = null;
-        statusText.textContent = "Pagamento confirmado!";
-        if (data.downloadUrl) {
-          downloadButton.href = data.downloadUrl;
-          show(successView);
-        } else {
-          statusText.textContent = "Pagamento confirmado. Preparando seu acesso...";
-        }
-      }
-    } catch (error) {
-      console.error(error);
-    }
+  function botMessage(text, kind = "bot") {
+    const wrap = document.createElement("div");
+    wrap.className = "chat-message " + kind;
+    const avatar = document.createElement("span");
+    avatar.className = "chat-avatar";
+    avatar.textContent = kind === "bot" ? "H" : "✓";
+    const body = document.createElement("div");
+    const strong = document.createElement("strong");
+    strong.textContent = kind === "bot" ? "Bot H ebooks" : "Verificação";
+    const p = document.createElement("p");
+    p.textContent = text;
+    body.append(strong, p);
+    wrap.append(avatar, body);
+    chatWindow.appendChild(wrap);
+    chatWindow.scrollTop = chatWindow.scrollHeight;
   }
 
   buyButton.addEventListener("click", openModal);
 
-  document.querySelectorAll("[data-close-modal]").forEach(el => {
-    el.addEventListener("click", closeModal);
+  document.querySelectorAll("[data-close-modal]").forEach(el => el.addEventListener("click", closeModal));
+  document.addEventListener("keydown", e => {
+    if (e.key === "Escape" && modal.classList.contains("active")) closeModal();
   });
 
-  document.addEventListener("keydown", event => {
-    if (event.key === "Escape" && modal.classList.contains("active")) closeModal();
+  paymentButton.addEventListener("click", e => {
+    if (!config.mercadoPagoPaymentLink) {
+      e.preventDefault();
+      paymentMessage.textContent = "O Link de Pagamento do Mercado Pago ainda precisa ser configurado.";
+      paymentMessage.classList.add("error");
+      return;
+    }
+    paymentButton.href = config.mercadoPagoPaymentLink;
   });
 
-  form.addEventListener("submit", async event => {
-    event.preventDefault();
-    setMessage("");
+  paymentDoneButton.addEventListener("click", () => show(botView));
+  backToPayment.addEventListener("click", () => show(paymentView));
 
-    const name = document.getElementById("customer-name").value.trim();
-    const email = document.getElementById("customer-email").value.trim();
-    const cpfCnpj = normalizeDocument(document.getElementById("customer-document").value);
+  async function verifyReceipt(formData) {
+    if (!config.receiptVerifierUrl) {
+      throw new Error("O verificador seguro ainda precisa ser conectado ao servidor antes de liberar o eBook automaticamente.");
+    }
 
-    if (!name || !email || ![11, 14].includes(cpfCnpj.length)) {
-      setMessage("Preencha nome, e-mail e um CPF/CNPJ válido para continuar.", true);
+    const response = await fetch(config.receiptVerifierUrl, {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Não foi possível validar o comprovante.");
+    return data;
+  }
+
+  receiptForm.addEventListener("submit", async e => {
+    e.preventDefault();
+
+    const name = document.getElementById("buyer-name").value.trim();
+    const email = document.getElementById("buyer-email").value.trim();
+    const file = document.getElementById("receipt-file").files[0];
+
+    if (!name || !email || !file) {
+      botMessage("Preencha seu nome, e-mail e envie o comprovante para continuar.");
       return;
     }
 
-    generatePix.disabled = true;
-    generatePix.textContent = "Gerando Pix...";
-
-    try {
-      const data = await api({
-        action: "create-payment",
-        productId: config.productId,
-        name,
-        email,
-        cpfCnpj
-      });
-
-      currentPaymentId = data.paymentId;
-      qrImage.src = data.encodedImage.startsWith("data:")
-        ? data.encodedImage
-        : "data:image/png;base64," + data.encodedImage;
-      pixCode.value = data.payload || "";
-      show(pixView);
-
-      clearInterval(pollTimer);
-      pollTimer = setInterval(checkPayment, Number(config.paymentPollMs) || 5000);
-      checkPayment();
-    } catch (error) {
-      setMessage(error.message, true);
-    } finally {
-      generatePix.disabled = false;
-      generatePix.textContent = "Gerar QR Code Pix";
+    const allowed = ["image/png", "image/jpeg", "image/webp", "application/pdf"];
+    if (!allowed.includes(file.type)) {
+      botMessage("Envie o comprovante em PDF, PNG, JPG ou WEBP.");
+      return;
     }
-  });
 
-  copyPix.addEventListener("click", async () => {
+    if (file.size > 10 * 1024 * 1024) {
+      botMessage("O comprovante deve ter no máximo 10 MB.");
+      return;
+    }
+
+    verifyButton.disabled = true;
+    verifyButton.textContent = "Analisando...";
+    botMessage("Recebi o comprovante. Estou conferindo os dados do pagamento...");
+
+    const formData = new FormData();
+    formData.append("receipt", file);
+    formData.append("name", name);
+    formData.append("email", email);
+    formData.append("productId", config.productId || "");
+    formData.append("expectedAmount", String(config.price || ""));
+    formData.append("expectedRecipient", config.expectedRecipient || "");
+    formData.append("expectedPixKey", config.expectedPixKey || "");
+
     try {
-      await navigator.clipboard.writeText(pixCode.value);
-      copyPix.textContent = "Copiado!";
-      setTimeout(() => (copyPix.textContent = "Copiar"), 1600);
-    } catch {
-      pixCode.select();
-      document.execCommand("copy");
+      const data = await verifyReceipt(formData);
+
+      if (data.approved === true && data.downloadUrl) {
+        botMessage("Pagamento aprovado. Todos os dados obrigatórios conferem.", "ok");
+        downloadButton.href = data.downloadUrl;
+        setTimeout(() => show(successView), 700);
+      } else {
+        const reason = data.reason || "Não consegui confirmar todos os dados do pagamento.";
+        botMessage(reason + " O eBook não será liberado automaticamente.");
+      }
+    } catch (error) {
+      botMessage(error.message);
+    } finally {
+      verifyButton.disabled = false;
+      verifyButton.textContent = "Enviar para análise";
     }
   });
 })();
