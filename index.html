@@ -121,6 +121,20 @@
           <button class="btn btn-large full" id="verify-button" type="submit">Enviar para análise</button>
           <button class="text-button" id="back-to-payment" type="button">← Voltar ao QR Code</button>
         </form>
+
+        <div class="human-support-box">
+          <strong>Está com problema?</strong>
+          <p>Se o bot não conseguir validar, fale com o suporte humano.</p>
+          <button class="btn btn-support full" id="support-human-button" type="button">Falar com suporte humano</button>
+
+          <form id="support-form" class="support-form hidden">
+            <label>Descreva o problema
+              <textarea id="support-problem" required minlength="5" maxlength="1500" placeholder="Ex.: fiz o pagamento, mas o comprovante não foi aceito."></textarea>
+            </label>
+            <button class="btn btn-large full" id="support-submit" type="submit">Abrir chamado</button>
+            <p class="form-message" id="support-message" role="status"></p>
+          </form>
+        </div>
       </div>
 
       <div id="success-view" class="hidden success-view">
@@ -132,6 +146,9 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>\n  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>\n  <script src="config.js"></script><script src="app.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+  <script src="config.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
