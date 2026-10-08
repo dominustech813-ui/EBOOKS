@@ -78,6 +78,13 @@
             <button class="primary" id="mp-save" type="submit">Salvar configuração de teste</button>
             <p id="mp-msg" class="muted"></p>
           </form>
+          <div class="info-card"><strong>Teste oficial do Pix</strong><p class="muted">O Mercado Pago exige R$ 50,00 no teste de Pix. Nenhum dinheiro real será movimentado. O status será atualizado automaticamente pelo ambiente de testes.</p></div>
+          <button class="primary" id="mp-test-create" type="button">Gerar Pix de teste de R$ 50,00</button>
+          <div id="mp-test-result" class="info-card" style="display:none;margin-top:14px">
+            <strong>Resultado do teste</strong>
+            <p class="muted" id="mp-test-text"></p>
+            <button class="primary" id="mp-test-status" type="button" style="display:none">Atualizar status</button>
+          </div>
           <div class="info-card"><strong>Importante</strong><p class="muted">Use apenas as credenciais de teste nesta etapa. As credenciais produtivas serão configuradas somente depois que o fluxo Pix + Webhook passar nos testes.</p></div>
         </section>
 
@@ -93,6 +100,8 @@
 <script>
 const API="https://faoasptdjhdtonnvflbd.supabase.co/functions/v1/support-api";
 const MP_CONFIG_API="https://faoasptdjhdtonnvflbd.supabase.co/functions/v1/mercadopago-config";
+const MP_TEST_API="https://faoasptdjhdtonnvflbd.supabase.co/functions/v1/mercadopago-test";
+let currentTestOrderId="";
 let adminCode="";
 const esc=s=>String(s??"").replace(/[&<>"']/g,m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;","'":"&#039;"}[m]));
 async function api(body){const r=await fetch(API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Erro");return d}
@@ -103,6 +112,17 @@ document.getElementById("login-btn").onclick=async()=>{adminCode=document.getEle
 async function mpApi(body){const r=await fetch(MP_CONFIG_API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Erro");return d}
 async function loadMpStatus(){const box=document.getElementById("mp-status");try{const d=await mpApi({action:"status",adminCode});box.innerHTML="<strong>Status</strong><p class='muted'>Access Token de teste: <b>"+(d.testAccessTokenConfigured?"configurado":"pendente")+"</b><br>Webhook secreto: <b>"+(d.testWebhookSecretConfigured?"configurado":"pendente")+"</b></p>"}catch(e){box.innerHTML="<strong>Status</strong><p class='muted'>"+esc(e.message)+"</p>"}}
 document.getElementById("mp-config-form").onsubmit=async e=>{e.preventDefault();const btn=document.getElementById("mp-save"),msg=document.getElementById("mp-msg");btn.disabled=true;btn.textContent="Salvando...";msg.textContent="";try{const accessToken=document.getElementById("mp-access-token").value.trim();const webhookSecret=document.getElementById("mp-webhook-secret").value.trim();const d=await mpApi({action:"save-test-config",adminCode,accessToken,webhookSecret});msg.textContent=d.message;document.getElementById("mp-access-token").value="";document.getElementById("mp-webhook-secret").value="";await loadMpStatus()}catch(e){msg.textContent=e.message}finally{btn.disabled=false;btn.textContent="Salvar configuração de teste"}};
+
+async function mpTestApi(body){const r=await fetch(MP_TEST_API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Erro no teste do Mercado Pago.");return d}
+function renderTestStatus(d){
+  const box=document.getElementById("mp-test-result"),txt=document.getElementById("mp-test-text"),statusBtn=document.getElementById("mp-test-status");
+  box.style.display="block";
+  const approved=d.approved===true;
+  txt.innerHTML="<b>Order:</b> "+esc(d.orderId||currentTestOrderId)+"<br><b>Status:</b> "+esc(d.status||"-")+" / "+esc(d.statusDetail||"-")+(typeof d.webhookVerified==="boolean"?"<br><b>Webhook autenticado:</b> "+(d.webhookVerified?"SIM":"ainda não"):"")+(approved?"<br><br><span class='ok'>✓ Pagamento de teste aprovado e creditado.</span>":"");
+  statusBtn.style.display=approved?"none":"inline-block";
+}
+document.getElementById("mp-test-create").onclick=async()=>{const btn=document.getElementById("mp-test-create"),box=document.getElementById("mp-test-result"),txt=document.getElementById("mp-test-text");btn.disabled=true;btn.textContent="Criando order de teste...";box.style.display="block";txt.textContent="Enviando solicitação ao Mercado Pago...";try{const d=await mpTestApi({action:"create",adminCode});currentTestOrderId=d.orderId||"";renderTestStatus(d);if(currentTestOrderId){for(let i=0;i<8;i++){await new Promise(r=>setTimeout(r,3000));const st=await mpTestApi({action:"status",adminCode,orderId:currentTestOrderId});renderTestStatus(st);if(st.approved)break}}}catch(e){txt.textContent=e.message}finally{btn.disabled=false;btn.textContent="Gerar novo Pix de teste de R$ 50,00"}};
+document.getElementById("mp-test-status").onclick=async()=>{if(!currentTestOrderId)return;const btn=document.getElementById("mp-test-status");btn.disabled=true;try{const d=await mpTestApi({action:"status",adminCode,orderId:currentTestOrderId});renderTestStatus(d)}catch(e){document.getElementById("mp-test-text").textContent=e.message}finally{btn.disabled=false}};
 document.getElementById("refresh").onclick=load;document.getElementById("filter").onchange=load;
 const saved=sessionStorage.getItem("h_profile_admin");if(saved){adminCode=saved;document.getElementById("admin-code").value=saved;document.getElementById("login-btn").click()}
 </script>
