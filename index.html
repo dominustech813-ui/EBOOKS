@@ -111,13 +111,13 @@
       <div id="receipt-bot-view" class="hidden">
         <span class="eyebrow">H EBOOKS • VERIFICADOR</span><h2>Verificar pagamento</h2>
         <div class="chat-window" id="chat-window">
-          <div class="chat-message bot"><span class="chat-avatar">H</span><div><strong>Bot H ebooks</strong><p>Olá! Envie o comprovante completo e sem cortes. Vou conferir os dados obrigatórios do pagamento.</p></div></div>
+          <div class="chat-message bot"><span class="chat-avatar">H</span><div><strong>Bot H ebooks</strong><p>Olá! Envie uma foto ou captura de tela completa e nítida do comprovante. Vou ler e conferir os dados obrigatórios do pagamento.</p></div></div>
           <div class="chat-message bot"><span class="chat-avatar">H</span><div><strong>Bot H ebooks</strong><p>O pagamento esperado é R$ 29,90 para Theo. Se houver qualquer divergência, o eBook não será liberado.</p></div></div>
         </div>
         <form id="receipt-form" class="receipt-form">
           <label>Seu nome<input id="buyer-name" name="name" autocomplete="name" required minlength="3" placeholder="Seu nome" /></label>
           <label>Seu e-mail<input id="buyer-email" name="email" type="email" autocomplete="email" required placeholder="voce@email.com" /></label>
-          <label>Comprovante de pagamento<input id="receipt-file" name="receipt" type="file" required accept="image/png,image/jpeg,image/webp,application/pdf" /></label>
+          <label>Comprovante de pagamento<input id="receipt-file" name="receipt" type="file" required accept="image/png,image/jpeg,image/webp" /></label>
           <button class="btn btn-large full" id="verify-button" type="submit">Enviar para análise</button>
           <button class="text-button" id="back-to-payment" type="button">← Voltar ao QR Code</button>
         </form>
@@ -132,7 +132,6 @@
     </div>
   </div>
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
-  <script src="config.js"></script><script src="app.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>\n  <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>\n  <script src="config.js"></script><script src="app.js"></script>
 </body>
 </html>
