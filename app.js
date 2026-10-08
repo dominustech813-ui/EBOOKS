@@ -16,6 +16,11 @@
   const downloadButton = document.getElementById("download-button");
   const pixCode = document.getElementById("pix-code");
   const copyPix = document.getElementById("copy-pix");
+  const supportButton = document.getElementById("support-human-button");
+  const supportForm = document.getElementById("support-form");
+  const supportProblem = document.getElementById("support-problem");
+  const supportSubmit = document.getElementById("support-submit");
+  const supportMessage = document.getElementById("support-message");
 
   document.getElementById("year").textContent = new Date().getFullYear();
   document.getElementById("product-price").textContent = money.format(config.price || 0);
@@ -86,6 +91,53 @@
   });
 
   paymentDoneButton.addEventListener("click", () => show(botView));
+
+  supportButton.addEventListener("click", () => {
+    supportForm.classList.toggle("hidden");
+    if (!supportForm.classList.contains("hidden")) supportProblem.focus();
+  });
+
+  async function supportApi(payload) {
+    const response = await fetch(config.supportApiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Não foi possível abrir o chamado.");
+    return data;
+  }
+
+  supportForm.addEventListener("submit", async e => {
+    e.preventDefault();
+    const name = document.getElementById("buyer-name").value.trim();
+    const email = document.getElementById("buyer-email").value.trim();
+    const problem = supportProblem.value.trim();
+
+    if (!name || !email || problem.length < 5) {
+      supportMessage.textContent = "Preencha nome, e-mail e descreva o problema.";
+      supportMessage.classList.add("error");
+      return;
+    }
+
+    supportSubmit.disabled = true;
+    supportSubmit.textContent = "Abrindo chamado...";
+    supportMessage.textContent = "";
+    supportMessage.classList.remove("error");
+
+    try {
+      const data = await supportApi({ action: "create-ticket", name, email, problem });
+      supportMessage.innerHTML = "Chamado <strong>" + data.ticketCode + "</strong> aberto com sucesso. Guarde esse número.";
+      supportForm.querySelector("textarea").disabled = true;
+      supportSubmit.disabled = true;
+      supportSubmit.textContent = "Chamado aberto";
+    } catch (error) {
+      supportMessage.textContent = error.message;
+      supportMessage.classList.add("error");
+      supportSubmit.disabled = false;
+      supportSubmit.textContent = "Abrir chamado";
+    }
+  });
   backToPayment.addEventListener("click", () => show(paymentView));
 
   async function sha256(file) {
@@ -166,10 +218,16 @@
         downloadButton.href = data.downloadUrl;
         setTimeout(() => show(successView), 700);
       } else {
-        botMessage((data.reason || "Não consegui confirmar todos os dados do pagamento.") + " O eBook não será liberado.");
+        const reason = data.reason || "Não consegui confirmar todos os dados do pagamento.";
+        botMessage(reason + " O eBook não será liberado.");
+        supportForm.classList.remove("hidden");
+        if (!supportProblem.value) supportProblem.value = reason;
       }
     } catch (error) {
-      botMessage(error.message || "Falha ao analisar o comprovante.");
+      const reason = error.message || "Falha ao analisar o comprovante.";
+      botMessage(reason);
+      supportForm.classList.remove("hidden");
+      if (!supportProblem.value) supportProblem.value = reason;
     } finally {
       verifyButton.disabled = false;
       verifyButton.textContent = "Enviar para análise";
