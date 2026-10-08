@@ -29,7 +29,7 @@ jobs:
       - name: Prepare site
         run: |
           mkdir -p _site
-          cp index.html styles.css app.js config.js admin-upload.html _site/
+          cp index.html styles.css app.js config.js admin-upload.html admin-support.html _site/
 
       - name: Setup Pages
         uses: actions/configure-pages@v5
