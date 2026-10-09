@@ -1,0 +1,110 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#5b3df5" />
+  <title>Minha conta | H ebooks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css" />
+  <style>
+    .account-shell{min-height:calc(100vh - 150px);display:grid;place-items:center;padding:60px 0}
+    .account-card{width:min(720px,100%);background:#fff;border:1px solid var(--line);border-radius:28px;padding:34px;box-shadow:var(--shadow)}
+    .account-card h1,.account-card h2{font-family:Manrope,sans-serif;margin:0 0 10px}
+    .account-card h1{font-size:38px}.account-muted{color:var(--muted);margin:0 0 22px}
+    .otp-input{font-size:28px!important;letter-spacing:.28em;text-align:center;font-weight:800}
+    .account-actions{display:flex;gap:10px;flex-wrap:wrap;margin-top:16px}
+    .account-top{display:flex;align-items:center;justify-content:space-between;gap:18px;margin-bottom:26px}
+    .role-badge{display:inline-block;padding:7px 11px;border-radius:999px;background:#f0edff;color:var(--brand);font-size:11px;font-weight:800}
+    .library-grid{display:grid;gap:14px;margin-top:20px}
+    .library-item{border:1px solid var(--line);border-radius:18px;padding:18px;display:grid;grid-template-columns:1fr auto;align-items:center;gap:18px}
+    .library-item h3{font:800 17px Manrope;margin:0 0 5px}.library-item p{margin:0;color:var(--muted);font-size:13px}
+    .empty-library{border:1px dashed var(--line);border-radius:18px;padding:24px;text-align:center;color:var(--muted)}
+    .admin-box{margin-top:22px;padding:20px;border-radius:18px;background:#171625;color:#fff}
+    .admin-box p{color:#c2bfd0}.admin-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin:15px 0}
+    .admin-stat{background:#242133;border-radius:14px;padding:14px;text-align:center}.admin-stat strong{display:block;font-size:24px}.admin-stat span{font-size:11px;color:#bcb8ca}
+    .login-bot{display:flex;gap:12px;align-items:flex-start;background:#f7f7fb;border:1px solid var(--line);border-radius:16px;padding:15px;margin:18px 0}
+    .login-bot .chat-avatar{margin-top:2px}.login-bot p{margin:2px 0 0;color:var(--muted);font-size:13px}
+    @media(max-width:620px){.account-card{padding:26px 20px}.account-card h1{font-size:31px}.library-item{grid-template-columns:1fr}.admin-stats{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <div class="topbar">🔐 Conta protegida por código de acesso enviado ao e-mail</div>
+  <header class="nav container">
+    <a class="brand" href="index.html"><span class="brand-mark">H</span><span>ebooks</span></a>
+    <a class="btn btn-small btn-ghost" href="index.html">← Voltar à loja</a>
+  </header>
+
+  <main class="container account-shell">
+    <section class="account-card">
+      <div id="login-view">
+        <span class="eyebrow">MINHA CONTA</span>
+        <h1>Entre sem senha</h1>
+        <p class="account-muted">Informe seu e-mail. O Bot H ebooks envia um código de 6 dígitos para confirmar que a conta é sua.</p>
+
+        <div class="login-bot">
+          <span class="chat-avatar">H</span>
+          <div><strong>Bot H ebooks</strong><p>Na primeira entrada sua conta é criada automaticamente. Nas próximas, basta usar o mesmo e-mail e o novo código.</p></div>
+        </div>
+
+        <form id="email-form">
+          <label>Seu e-mail
+            <input id="login-email" type="email" autocomplete="email" required placeholder="voce@email.com" />
+          </label>
+          <button class="btn btn-large full" id="send-code-button" type="submit">Enviar código por e-mail</button>
+          <p class="form-message" id="login-message" role="status"></p>
+        </form>
+      </div>
+
+      <div id="code-view" class="hidden">
+        <span class="eyebrow">VERIFICAÇÃO</span>
+        <h2>Digite o código</h2>
+        <p class="account-muted">Enviamos um código de 6 dígitos para <strong id="code-email"></strong>.</p>
+        <form id="code-form">
+          <label>Código de acesso
+            <input id="login-code" class="otp-input" inputmode="numeric" autocomplete="one-time-code" maxlength="6" pattern="[0-9]{6}" required placeholder="000000" />
+          </label>
+          <button class="btn btn-large full" id="verify-code-button" type="submit">Entrar na minha conta</button>
+          <button class="text-button" id="resend-code-button" type="button">Enviar outro código</button>
+          <button class="text-button" id="change-email-button" type="button">Usar outro e-mail</button>
+          <p class="form-message" id="code-message" role="status"></p>
+        </form>
+      </div>
+
+      <div id="account-view" class="hidden">
+        <div class="account-top">
+          <div>
+            <span class="eyebrow">MINHA BIBLIOTECA</span>
+            <h2>Seus eBooks</h2>
+            <p class="account-muted" id="account-email"></p>
+          </div>
+          <button class="btn btn-small btn-ghost" id="logout-button" type="button">Sair</button>
+        </div>
+
+        <div id="library-list" class="library-grid"></div>
+
+        <div id="admin-box" class="admin-box hidden">
+          <span class="role-badge">ADMINISTRADOR</span>
+          <h2 style="margin-top:12px">Painel administrativo</h2>
+          <p>Sua conta tem acesso administrativo ao H ebooks.</p>
+          <div class="admin-stats">
+            <div class="admin-stat"><strong id="admin-users">0</strong><span>CONTAS</span></div>
+            <div class="admin-stat"><strong id="admin-sales">0</strong><span>VENDAS APROVADAS</span></div>
+            <div class="admin-stat"><strong id="admin-tickets">0</strong><span>CHAMADOS</span></div>
+          </div>
+          <div class="account-actions">
+            <a class="btn" href="profile.html">Abrir configurações</a>
+            <a class="btn btn-ghost" style="color:#fff;border-color:#4b465e" href="admin-support.html">Abrir suporte</a>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="config.js"></script>
+  <script src="account.js"></script>
+</body>
+</html>
