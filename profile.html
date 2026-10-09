@@ -18,7 +18,7 @@
     .menu button.active{background:#5b3df5;color:#fff}.menu small{display:block;color:#777;line-height:1.5;margin-top:14px}
     .panel{display:none}.panel.active{display:block}.login-row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end}
     label{display:block;font-weight:800;font-size:13px;margin-bottom:7px}input,select,textarea{width:100%;padding:12px;border:1px solid #ddd8ed;border-radius:10px;font:inherit}
-    button.primary{border:0;border-radius:10px;padding:12px 16px;background:#5b3df5;color:#fff;font-weight:800;cursor:pointer}
+    button.primary{border:0;border-radius:10px;padding:12px 16px;background:#5b3df5;color:#fff;font-weight:800;cursor:pointer}.credential-block{margin:16px 0;padding:14px;border:1px solid #e5dfff;border-radius:14px;background:#fbfaff}.credential-actions{display:flex;justify-content:flex-end;margin-top:8px}.remove-credential{border:1px solid #f0c8cf;background:#fff;color:#a4263a;border-radius:9px;padding:8px 11px;font-weight:800;cursor:pointer}
     .toolbar{display:flex;gap:10px;margin:18px 0;flex-wrap:wrap}.tickets{display:grid;gap:14px}.ticket{border:1px solid #e8e4f2;border-radius:16px;padding:18px}
     .ticket-head{display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap}.badge{padding:5px 9px;border-radius:999px;font-size:12px;font-weight:800}
     .open{background:#fff0c7;color:#745400}.closed{background:#e6f6eb;color:#1f6d3a}.meta{font-size:13px;color:#6d687b;margin:8px 0}.problem{background:#f8f7fc;border-radius:10px;padding:12px;white-space:pre-wrap}
@@ -69,13 +69,27 @@
           <div class="info-card"><strong>Mercado Pago automático</strong><p class="muted">Configure aqui as credenciais de teste. Elas são enviadas diretamente ao backend e armazenadas no Supabase Vault; não ficam no GitHub.</p></div>
           <div id="mp-status" class="info-card"><strong>Status</strong><p class="muted">Carregando...</p></div>
           <form id="mp-config-form">
-            <label>Access Token de teste
-              <input id="mp-access-token" type="password" autocomplete="off" placeholder="Cole o Access Token (campo de baixo com ícone de olho)" required>
-              <small class="muted">Não cole a Public Key. Use a chave privada chamada <strong>Access Token</strong>.</small>
-            </label>
-            <label>Assinatura secreta do Webhook
-              <input id="mp-webhook-secret" type="password" autocomplete="off" placeholder="Cole a assinatura secreta" required>
-            </label>
+            <div class="credential-block">
+              <label>Public Key de teste
+                <input id="mp-public-key" type="password" autocomplete="off" placeholder="APP_USR-...">
+                <small class="muted">Chave pública da aplicação.</small>
+              </label>
+              <div class="credential-actions"><button class="remove-credential" type="button" data-remove-secret="publicKey">Remover Public Key do H ebooks</button></div>
+            </div>
+            <div class="credential-block">
+              <label>Access Token de teste
+                <input id="mp-access-token" type="password" autocomplete="off" placeholder="Cole o Access Token">
+                <small class="muted">Chave privada usada pelo backend.</small>
+              </label>
+              <div class="credential-actions"><button class="remove-credential" type="button" data-remove-secret="accessToken">Remover Access Token do H ebooks</button></div>
+            </div>
+            <div class="credential-block">
+              <label>Assinatura secreta do Webhook
+                <input id="mp-webhook-secret" type="password" autocomplete="off" placeholder="Cole a assinatura secreta">
+                <small class="muted">Usada para validar as notificações do Mercado Pago.</small>
+              </label>
+              <div class="credential-actions"><button class="remove-credential" type="button" data-remove-secret="webhookSecret">Remover Webhook secreto do H ebooks</button></div>
+            </div>
             <button class="primary" id="mp-save" type="submit">Salvar configuração de teste</button>
             <p id="mp-msg" class="muted"></p>
           </form>
@@ -111,8 +125,9 @@ document.querySelectorAll(".tab").forEach(b=>b.onclick=()=>openPanel(b.dataset.p
 async function load(){const box=document.getElementById("tickets");box.innerHTML="Carregando...";try{const d=await api({action:"admin-list",adminCode,status:document.getElementById("filter").value});box.innerHTML=d.tickets.length?"":"Nenhum atendimento encontrado.";d.tickets.forEach(t=>{const el=document.createElement("div");el.className="ticket";const emailState=t.email_notified?'<span class="ok">E-mail enviado</span>':'<span class="warn">E-mail pendente</span>';el.innerHTML='<div class="ticket-head"><strong>'+esc(t.ticket_code)+'</strong><span class="badge '+(t.status==="OPEN"?"open":"closed")+'">'+esc(t.status)+'</span></div><div class="meta">'+esc(t.buyer_name)+' • '+esc(t.buyer_email)+' • '+new Date(t.created_at).toLocaleString("pt-BR")+' • '+emailState+'</div><div class="problem">'+esc(t.problem)+'</div>'+(t.status==="OPEN"?'<div class="close-box"><textarea placeholder="Motivo do encerramento"></textarea><button class="danger">Encerrar atendimento</button></div>':'<div class="meta"><strong>Motivo:</strong> '+esc(t.close_reason||"")+'</div>');if(t.status==="OPEN"){const ta=el.querySelector("textarea"),bt=el.querySelector(".danger");bt.onclick=async()=>{const reason=ta.value.trim();if(reason.length<3){alert("Informe o motivo.");return}bt.disabled=true;try{await api({action:"admin-close",adminCode,ticketCode:t.ticket_code,reason});await load()}catch(e){alert(e.message);bt.disabled=false}}}box.appendChild(el)});}catch(e){box.innerHTML='<p style="color:#a22">'+esc(e.message)+'</p>'}}
 document.getElementById("login-btn").onclick=async()=>{adminCode=document.getElementById("admin-code").value.trim();try{await api({action:"admin-list",adminCode,status:"OPEN"});document.getElementById("login").style.display="none";document.getElementById("private-area").style.display="block";sessionStorage.setItem("h_profile_admin",adminCode)}catch(e){document.getElementById("login-msg").textContent=e.message}};
 async function mpApi(body){const r=await fetch(MP_CONFIG_API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Erro");return d}
-async function loadMpStatus(){const box=document.getElementById("mp-status");try{const d=await mpApi({action:"status",adminCode});const tokenState=d.testAccessTokenLooksLikePublicKey?"<span style='color:#b42318'>ERRADO — Public Key colada no lugar do Access Token</span>":(d.testAccessTokenConfigured?"configurado":"pendente");box.innerHTML="<strong>Status</strong><p class='muted'>Access Token de teste: <b>"+tokenState+"</b><br>Webhook secreto: <b>"+(d.testWebhookSecretConfigured?"configurado":"pendente")+"</b></p>"}catch(e){box.innerHTML="<strong>Status</strong><p class='muted'>"+esc(e.message)+"</p>"}}
-document.getElementById("mp-config-form").onsubmit=async e=>{e.preventDefault();const btn=document.getElementById("mp-save"),msg=document.getElementById("mp-msg");btn.disabled=true;btn.textContent="Salvando...";msg.textContent="";try{const accessToken=document.getElementById("mp-access-token").value.trim();const webhookSecret=document.getElementById("mp-webhook-secret").value.trim();const d=await mpApi({action:"save-test-config",adminCode,accessToken,webhookSecret});msg.textContent=d.message;document.getElementById("mp-access-token").value="";document.getElementById("mp-webhook-secret").value="";await loadMpStatus()}catch(e){msg.textContent=e.message}finally{btn.disabled=false;btn.textContent="Salvar configuração de teste"}};
+async function loadMpStatus(){const box=document.getElementById("mp-status");try{const d=await mpApi({action:"status",adminCode});const tokenState=d.testAccessTokenLooksLikePublicKey?"<span style='color:#b42318'>ERRADO — Public Key colada no lugar do Access Token</span>":(d.testAccessTokenConfigured?"configurado":"pendente");box.innerHTML="<strong>Status</strong><p class='muted'>Public Key de teste: <b>"+(d.testPublicKeyConfigured?"configurada":"pendente")+"</b><br>Access Token de teste: <b>"+tokenState+"</b><br>Webhook secreto: <b>"+(d.testWebhookSecretConfigured?"configurado":"pendente")+"</b></p>"}catch(e){box.innerHTML="<strong>Status</strong><p class='muted'>"+esc(e.message)+"</p>"}}
+document.getElementById("mp-config-form").onsubmit=async e=>{e.preventDefault();const btn=document.getElementById("mp-save"),msg=document.getElementById("mp-msg");btn.disabled=true;btn.textContent="Salvando...";msg.textContent="";try{const publicKey=document.getElementById("mp-public-key").value.trim();const accessToken=document.getElementById("mp-access-token").value.trim();const webhookSecret=document.getElementById("mp-webhook-secret").value.trim();const d=await mpApi({action:"save-test-config",adminCode,publicKey,accessToken,webhookSecret});msg.textContent=d.message;document.getElementById("mp-public-key").value="";document.getElementById("mp-access-token").value="";document.getElementById("mp-webhook-secret").value="";await loadMpStatus()}catch(e){msg.textContent=e.message}finally{btn.disabled=false;btn.textContent="Salvar configuração de teste"}};
+document.querySelectorAll("[data-remove-secret]").forEach(btn=>btn.onclick=async()=>{const target=btn.dataset.removeSecret;const names={publicKey:"Public Key",accessToken:"Access Token",webhookSecret:"Webhook secreto"};if(!confirm("Remover "+names[target]+" somente do H ebooks?"))return;btn.disabled=true;const msg=document.getElementById("mp-msg");try{const d=await mpApi({action:"remove-test-secret",adminCode,target});msg.textContent=d.message;await loadMpStatus()}catch(e){msg.textContent=e.message}finally{btn.disabled=false}});
 
 async function mpTestApi(body){const r=await fetch(MP_TEST_API,{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body)});const d=await r.json().catch(()=>({}));if(!r.ok)throw new Error(d.error||"Erro no teste do Mercado Pago.");return d}
 function renderTestStatus(d){
