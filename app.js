@@ -44,6 +44,59 @@
   const cardButton = document.getElementById("card-checkout-button");
   const cardStatus = document.getElementById("card-payment-status");
 
+  const purchaseStorageKey = "hebooks:purchase:" + (config.productId || "produto");
+  const pendingStorageKey = "hebooks:pending:" + (config.productId || "produto");
+
+  function readJsonStorage(key) {
+    try {
+      const value = localStorage.getItem(key);
+      return value ? JSON.parse(value) : null;
+    } catch {
+      return null;
+    }
+  }
+
+  function savePendingPurchase(token, method) {
+    if (!token) return;
+    localStorage.setItem(pendingStorageKey, JSON.stringify({
+      checkoutToken: token,
+      method,
+      savedAt: Date.now()
+    }));
+  }
+
+  function savePurchasedEbook(token, method) {
+    if (!token) return;
+    localStorage.setItem(purchaseStorageKey, JSON.stringify({
+      checkoutToken: token,
+      method,
+      savedAt: Date.now()
+    }));
+    localStorage.removeItem(pendingStorageKey);
+    buyButton.textContent = "Baixar meu eBook";
+  }
+
+  function clearPurchasedEbook() {
+    localStorage.removeItem(purchaseStorageKey);
+    buyButton.textContent = "Comprar agora";
+  }
+
+  async function ebookAccessApi(checkoutToken) {
+    if (!config.ebookAccessApiUrl) throw new Error("Acesso ao eBook indisponível.");
+    const response = await fetch(config.ebookAccessApiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ checkoutToken })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new Error(data.error || "Não foi possível recuperar sua compra.");
+      error.status = response.status;
+      throw error;
+    }
+    return data;
+  }
+
   let automaticPayments = false;
   let checkoutToken = "";
   let pollTimer = null;
@@ -117,6 +170,44 @@
     return automaticPayments;
   }
 
+  async function tryRestorePurchasedEbook() {
+    const saved = readJsonStorage(purchaseStorageKey) || readJsonStorage(pendingStorageKey);
+    if (!saved?.checkoutToken) return false;
+
+    try {
+      const data = await ebookAccessApi(saved.checkoutToken);
+      if (data.approved === true && data.downloadUrl) {
+        savePurchasedEbook(saved.checkoutToken, saved.method || "pix");
+        downloadButton.href = data.downloadUrl;
+        show(successView);
+        return true;
+      }
+
+      if (readJsonStorage(purchaseStorageKey)) {
+        clearPurchasedEbook();
+      }
+      return false;
+    } catch (error) {
+      if (error.status === 400 || error.status === 404) {
+        clearPurchasedEbook();
+        localStorage.removeItem(pendingStorageKey);
+        return false;
+      }
+
+      if (readJsonStorage(purchaseStorageKey)) {
+        show(autoView);
+        if (autoStatus) {
+          autoStatus.textContent = "Sua compra já está registrada neste dispositivo, mas não foi possível gerar o download agora. Tente novamente em instantes.";
+        }
+        if (autoForm) autoForm.classList.add("hidden");
+        if (pixMethodPanel) pixMethodPanel.classList.add("hidden");
+        if (cardMethodPanel) cardMethodPanel.classList.add("hidden");
+        return true;
+      }
+      return false;
+    }
+  }
+
   async function openModal() {
     paymentMessage.textContent = "";
     checkoutToken = "";
@@ -124,11 +215,18 @@
     clearTimeout(pollTimer);
     if (autoPixArea) autoPixArea.classList.add("hidden");
     if (autoStatus) autoStatus.textContent = "Aguardando pagamento...";
-    if (autoForm) autoForm.reset();
+    if (autoForm) {
+      autoForm.reset();
+      autoForm.classList.remove("hidden");
+    }
+    if (pixMethodPanel) pixMethodPanel.classList.remove("hidden");
+    if (cardMethodPanel) cardMethodPanel.classList.add("hidden");
 
     modal.classList.add("active");
     modal.setAttribute("aria-hidden", "false");
     document.body.style.overflow = "hidden";
+
+    if (await tryRestorePurchasedEbook()) return;
 
     const isAutomatic = await refreshCheckoutMode();
     if (methodPix && methodCard) selectMethod("pix");
@@ -179,6 +277,7 @@
       if (data.approved === true && data.downloadUrl) {
         clearTimeout(pollTimer);
         autoStatus.textContent = "✓ Pagamento confirmado pelo Mercado Pago. Liberando seu eBook...";
+        savePurchasedEbook(checkoutToken, "pix");
         downloadButton.href = data.downloadUrl;
         setTimeout(() => show(successView), 500);
         return;
@@ -212,6 +311,7 @@
       try {
         const data = await cardProApi({ action: "create", name, email });
         if (!data.checkoutUrl) throw new Error("O Mercado Pago não retornou a página de pagamento.");
+        savePendingPurchase(data.checkoutToken || "", "card");
         cardStatus.textContent = "Redirecionando para o ambiente seguro do Mercado Pago...";
         window.location.href = data.checkoutUrl;
       } catch (error) {
@@ -236,6 +336,7 @@
       try {
         const data = await checkoutApi({ action: "create", name, email });
         checkoutToken = data.checkoutToken || "";
+        savePendingPurchase(checkoutToken, "pix");
         autoPixCode.value = data.qrCode || "";
         if (data.qrCodeBase64) {
           autoPixImage.src = "data:image/png;base64," + data.qrCodeBase64;
@@ -443,6 +544,7 @@
       try {
         const data = await cardProApi({ action: "status", checkoutToken: token });
         if (data.approved === true && data.downloadUrl) {
+          savePurchasedEbook(token, "card");
           downloadButton.href = data.downloadUrl;
           show(successView);
           return;
@@ -458,6 +560,11 @@
     }
 
     if (cardStatus) cardStatus.textContent = "Pagamento ainda não confirmado. Aguarde alguns instantes e tente novamente.";
+  }
+
+  const existingPurchase = readJsonStorage(purchaseStorageKey);
+  if (existingPurchase?.checkoutToken) {
+    buyButton.textContent = "Baixar meu eBook";
   }
 
   refreshCheckoutMode();
