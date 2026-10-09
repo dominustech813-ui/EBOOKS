@@ -30,7 +30,7 @@
           <a class="btn" href="#ebook">Comprar meu eBook</a>
           <a class="btn btn-ghost" href="#como-funciona">Entender como funciona</a>
         </div>
-        <div class="trust-row"><span>✓ Pix direto</span><span>✓ QR Code + Copia e Cola</span><span>✓ Verificação do comprovante</span></div>
+        <div class="trust-row"><span>✓ Pix direto</span><span>✓ QR Code + Copia e Cola</span><span>✓ Confirmação automática do pagamento</span></div>
       </div>
       <div class="hero-art" aria-label="Capa ilustrativa do eBook">
         <div class="glow glow-one"></div><div class="glow glow-two"></div>
@@ -47,8 +47,8 @@
         <div class="section-heading"><span class="eyebrow">SIMPLES DO INÍCIO AO FIM</span><h2>Como funciona?</h2><p>Um fluxo simples para comprar e receber seu material digital.</p></div>
         <div class="steps">
           <article class="step-card"><span class="step-number">1</span><div class="step-icon">🛒</div><h3>Compre o eBook</h3><p>Clique em comprar e veja o QR Code Pix de R$ 29,90.</p></article>
-          <article class="step-card"><span class="step-number">2</span><div class="step-icon">📲</div><h3>Pague e envie o comprovante</h3><p>Pague pelo QR Code ou Pix Copia e Cola e clique em “Já fiz o pagamento”.</p></article>
-          <article class="step-card"><span class="step-number">3</span><div class="step-icon">✨</div><h3>Aproveite!</h3><p>O comprovante passa pelo verificador e, quando aprovado, o acesso ao eBook é liberado.</p></article>
+          <article class="step-card"><span class="step-number">2</span><div class="step-icon">📲</div><h3>Pague pelo Pix</h3><p>Pague pelo QR Code ou Pix Copia e Cola gerado pelo Mercado Pago.</p></article>
+          <article class="step-card"><span class="step-number">3</span><div class="step-icon">✨</div><h3>Aproveite!</h3><p>Assim que o Mercado Pago confirmar o pagamento, o acesso ao eBook é liberado automaticamente.</p></article>
         </div>
       </div>
     </section>
@@ -72,7 +72,7 @@
         <div class="benefits">
           <article><span>📱</span><h3>Leia onde quiser</h3><p>Celular, tablet ou computador.</p></article>
           <article><span>⚡</span><h3>Pix rápido</h3><p>QR Code e código Pix Copia e Cola prontos para pagamento.</p></article>
-          <article><span>🤖</span><h3>Verificador</h3><p>Depois do pagamento, envie seu comprovante para análise.</p></article>
+          <article><span>⚡</span><h3>Confirmação automática</h3><p>O Mercado Pago confirma o pagamento e o eBook é liberado automaticamente.</p></article>
           <article><span>🎯</span><h3>Direto ao ponto</h3><p>Conteúdo organizado para facilitar a consulta.</p></article>
         </div>
       </div>
@@ -81,8 +81,8 @@
     <section class="section container faq">
       <div class="section-heading"><span class="eyebrow">DÚVIDAS RÁPIDAS</span><h2>Comprar é simples.</h2></div>
       <details open><summary>Como faço o pagamento?</summary><p>Abra o checkout, escaneie o QR Code com o aplicativo do seu banco ou copie o código Pix.</p></details>
-      <details><summary>Para quem vai o Pix?</summary><p>Antes de confirmar no seu banco, confira se o beneficiário exibido é <strong>Theo</strong> e se o valor é <strong>R$ 29,90</strong>.</p></details>
-      <details><summary>Como recebo o eBook?</summary><p>Depois de pagar, clique em “Já fiz o pagamento” e envie o comprovante completo. A liberação acontece somente após a validação.</p></details>
+      <details><summary>Como sei que o Pix é o correto?</summary><p>O QR Code é gerado pelo Mercado Pago para esta compra. Antes de confirmar, confira no seu banco o valor de <strong>R$ 29,90</strong>.</p></details>
+      <details><summary>Como recebo o eBook?</summary><p>Depois do pagamento, o H ebooks consulta o Mercado Pago e libera o download automaticamente quando a compra for confirmada.</p></details>
     </section>
   </main>
 
@@ -92,6 +92,28 @@
     <div class="modal-backdrop" data-close-modal></div>
     <div class="modal-card" role="dialog" aria-modal="true" aria-labelledby="checkout-title">
       <button class="modal-close" type="button" aria-label="Fechar" data-close-modal>×</button>
+
+      <div id="auto-checkout-view" class="hidden">
+        <span class="eyebrow">PAGAMENTO AUTOMÁTICO</span>
+        <h2>Pague R$ 29,90 via Pix</h2>
+        <p class="modal-subtitle">O Mercado Pago gera um Pix exclusivo para esta compra e confirma o pagamento automaticamente.</p>
+        <form id="auto-checkout-form" class="receipt-form">
+          <label>Seu nome<input id="auto-buyer-name" autocomplete="name" required minlength="3" placeholder="Seu nome completo" /></label>
+          <label>Seu e-mail<input id="auto-buyer-email" type="email" autocomplete="email" required placeholder="voce@email.com" /></label>
+          <button class="btn btn-large full" id="auto-generate-pix" type="submit">Gerar Pix de R$ 29,90</button>
+        </form>
+        <div id="auto-pix-area" class="hidden">
+          <div class="qr-wrap"><img id="auto-pix-image" alt="QR Code Pix Mercado Pago" style="max-width:230px;width:100%;height:auto"></div>
+          <div class="pix-copy-area">
+            <label>Pix Copia e Cola<input id="auto-pix-code" readonly /></label>
+            <button class="btn btn-ghost full" id="auto-copy-pix" type="button">Copiar código Pix</button>
+          </div>
+          <p class="form-message" id="auto-payment-status" role="status">Aguardando pagamento...</p>
+          <button class="btn btn-large full" id="auto-check-status" type="button">Já paguei • verificar agora</button>
+          <button class="text-button" id="auto-support-button" type="button">Está com problema? Falar com suporte humano</button>
+          <small class="privacy-note">A liberação acontece somente após confirmação oficial do Mercado Pago.</small>
+        </div>
+      </div>
 
       <div id="payment-view">
         <span class="eyebrow">PAGAMENTO PIX</span>
