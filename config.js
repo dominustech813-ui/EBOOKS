@@ -11,5 +11,6 @@ window.HEBOOKS_CONFIG = {
   receiptVerifierUrl: "https://faoasptdjhdtonnvflbd.supabase.co/functions/v1/receipt-verifier",
   supportApiUrl: "https://faoasptdjhdtonnvflbd.supabase.co/functions/v1/support-api",
   checkoutApiUrl: "https://faoasptdjhdtonnvflbd.supabase.co/functions/v1/mercadopago-checkout",
-  cardProApiUrl: "https://faoasptdjhdtonnvflbd.supabase.co/functions/v1/mercadopago-card-pro"
+  cardProApiUrl: "https://faoasptdjhdtonnvflbd.supabase.co/functions/v1/mercadopago-card-pro",
+  ebookAccessApiUrl: "https://faoasptdjhdtonnvflbd.supabase.co/functions/v1/ebook-access"
 };
