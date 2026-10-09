@@ -34,6 +34,15 @@
   const autoStatus = document.getElementById("auto-payment-status");
   const autoCheckStatus = document.getElementById("auto-check-status");
   const autoSupportButton = document.getElementById("auto-support-button");
+  const pixMethodPanel = document.getElementById("pix-method-panel");
+  const cardMethodPanel = document.getElementById("card-method-panel");
+  const methodPix = document.getElementById("method-pix");
+  const methodCard = document.getElementById("method-card");
+  const cardForm = document.getElementById("card-checkout-form");
+  const cardName = document.getElementById("card-buyer-name");
+  const cardEmail = document.getElementById("card-buyer-email");
+  const cardButton = document.getElementById("card-checkout-button");
+  const cardStatus = document.getElementById("card-payment-status");
 
   let automaticPayments = false;
   let checkoutToken = "";
@@ -76,6 +85,28 @@
     return data;
   }
 
+  async function cardProApi(payload) {
+    if (!config.cardProApiUrl) throw new Error("Pagamento por cartão indisponível.");
+    const response = await fetch(config.cardProApiUrl, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload)
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Não foi possível iniciar o pagamento com cartão.");
+    return data;
+  }
+
+  function selectMethod(method) {
+    const card = method === "card";
+    if (pixMethodPanel) pixMethodPanel.classList.toggle("hidden", card);
+    if (cardMethodPanel) cardMethodPanel.classList.toggle("hidden", !card);
+    if (methodPix) methodPix.classList.toggle("active", !card);
+    if (methodCard) methodCard.classList.toggle("active", card);
+    if (card && cardName && autoName && !cardName.value) cardName.value = autoName.value || "";
+    if (card && cardEmail && autoEmail && !cardEmail.value) cardEmail.value = autoEmail.value || "";
+  }
+
   async function refreshCheckoutMode() {
     try {
       const data = await checkoutApi({ action: "config" });
@@ -100,6 +131,7 @@
     document.body.style.overflow = "hidden";
 
     const isAutomatic = await refreshCheckoutMode();
+    if (methodPix && methodCard) selectMethod("pix");
     show(isAutomatic && autoView ? autoView : paymentView);
   }
 
@@ -164,6 +196,31 @@
     } catch (error) {
       autoStatus.textContent = error.message || "Não foi possível consultar o pagamento.";
     }
+  }
+
+  if (methodPix) methodPix.addEventListener("click", () => selectMethod("pix"));
+  if (methodCard) methodCard.addEventListener("click", () => selectMethod("card"));
+
+  if (cardForm) {
+    cardForm.addEventListener("submit", async e => {
+      e.preventDefault();
+      const name = cardName.value.trim();
+      const email = cardEmail.value.trim();
+      cardButton.disabled = true;
+      cardButton.textContent = "Abrindo Mercado Pago...";
+      cardStatus.textContent = "";
+      try {
+        const data = await cardProApi({ action: "create", name, email });
+        if (!data.checkoutUrl) throw new Error("O Mercado Pago não retornou a página de pagamento.");
+        cardStatus.textContent = "Redirecionando para o ambiente seguro do Mercado Pago...";
+        window.location.href = data.checkoutUrl;
+      } catch (error) {
+        cardStatus.textContent = error.message || "Não foi possível iniciar o pagamento.";
+        cardStatus.classList.add("error");
+        cardButton.disabled = false;
+        cardButton.textContent = "Pagar R$ 29,90 com cartão";
+      }
+    });
   }
 
   if (autoForm) {
@@ -367,5 +424,42 @@
     }
   });
 
+  async function handleCardReturn() {
+    const params = new URLSearchParams(window.location.search);
+    const token = params.get("card_return");
+    if (!token) return;
+
+    modal.classList.add("active");
+    modal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+    show(autoView);
+    selectMethod("card");
+    if (cardStatus) cardStatus.textContent = "Confirmando o pagamento com o Mercado Pago...";
+
+    const cleanUrl = window.location.pathname + window.location.hash;
+    history.replaceState({}, document.title, cleanUrl);
+
+    for (let i = 0; i < 12; i++) {
+      try {
+        const data = await cardProApi({ action: "status", checkoutToken: token });
+        if (data.approved === true && data.downloadUrl) {
+          downloadButton.href = data.downloadUrl;
+          show(successView);
+          return;
+        }
+        if (data.status === "rejected" || data.status === "cancelled") {
+          if (cardStatus) cardStatus.textContent = "O pagamento não foi aprovado. Você pode tentar novamente.";
+          return;
+        }
+      } catch (error) {
+        if (i === 11 && cardStatus) cardStatus.textContent = error.message || "Não foi possível confirmar o pagamento.";
+      }
+      await new Promise(resolve => setTimeout(resolve, 2500));
+    }
+
+    if (cardStatus) cardStatus.textContent = "Pagamento ainda não confirmado. Aguarde alguns instantes e tente novamente.";
+  }
+
   refreshCheckoutMode();
+  handleCardReturn();
 })();
