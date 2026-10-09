@@ -1,7 +1,15 @@
 (() => {
   const config = window.HEBOOKS_CONFIG || {};
-  const SESSION_KEY = "hebooks-account-session";
-  const EMAIL_KEY = "hebooks-login-email";
+  const { createClient } = window.supabase || {};
+
+  if (!createClient || !config.supabaseUrl || !config.supabasePublishableKey) {
+    document.body.innerHTML = "<p style='padding:30px;font-family:sans-serif'>A conta está temporariamente indisponível.</p>";
+    return;
+  }
+
+  const sb = createClient(config.supabaseUrl, config.supabasePublishableKey, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  });
 
   const loginView = document.getElementById("login-view");
   const codeView = document.getElementById("code-view");
@@ -22,16 +30,7 @@
   const library = document.getElementById("library-list");
   const adminBox = document.getElementById("admin-box");
 
-  let pendingEmail = sessionStorage.getItem(EMAIL_KEY) || "";
-
-  function getSessionToken() {
-    return localStorage.getItem(SESSION_KEY) || "";
-  }
-
-  function setSessionToken(token) {
-    if (token) localStorage.setItem(SESSION_KEY, token);
-    else localStorage.removeItem(SESSION_KEY);
-  }
+  let pendingEmail = sessionStorage.getItem("hebooks-login-email") || "";
 
   function show(view) {
     [loginView, codeView, accountView].forEach(el => el.classList.add("hidden"));
@@ -39,22 +38,21 @@
   }
 
   async function accountApi(action, extra = {}) {
-    if (!config.accountApiUrl) throw new Error("Serviço de conta indisponível.");
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session?.access_token) throw new Error("Sua sessão expirou. Entre novamente.");
+
     const response = await fetch(config.accountApiUrl, {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        action,
-        sessionToken: getSessionToken(),
-        ...extra
-      })
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + session.access_token,
+        "apikey": config.supabasePublishableKey
+      },
+      body: JSON.stringify({ action, ...extra })
     });
+
     const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      const error = new Error(data.error || "Não foi possível processar sua conta.");
-      error.status = response.status;
-      throw error;
-    }
+    if (!response.ok) throw new Error(data.error || "Não foi possível carregar sua conta.");
     return data;
   }
 
@@ -62,17 +60,26 @@
     const clean = String(email || "").trim().toLowerCase();
     if (!/^\S+@\S+\.\S+$/.test(clean)) throw new Error("Informe um e-mail válido.");
 
-    const data = await accountApi("request-code", { email: clean });
+    const { error } = await sb.auth.signInWithOtp({
+      email: clean,
+      options: {
+        shouldCreateUser: true,
+        emailRedirectTo: "https://dominustech813-ui.github.io/EBOOKS/account.html"
+      }
+    });
+
+    if (error) throw error;
+
     pendingEmail = clean;
-    sessionStorage.setItem(EMAIL_KEY, clean);
+    sessionStorage.setItem("hebooks-login-email", clean);
     codeEmail.textContent = clean;
     codeInput.value = "";
     show(codeView);
     setTimeout(() => codeInput.focus(), 100);
-    return data;
   }
 
-  function renderLibrary(data) {
+  async function loadAccount() {
+    const data = await accountApi("me");
     accountEmail.textContent = data.user.email;
     library.innerHTML = "";
 
@@ -116,11 +123,12 @@
 
     if (data.user.role === "admin") {
       adminBox.classList.remove("hidden");
-      accountApi("admin-overview").then(overview => {
+      try {
+        const overview = await accountApi("admin-overview");
         document.getElementById("admin-users").textContent = overview.users || 0;
         document.getElementById("admin-sales").textContent = overview.approvedSales || 0;
         document.getElementById("admin-tickets").textContent = overview.supportTickets || 0;
-      }).catch(() => {});
+      } catch {}
     } else {
       adminBox.classList.add("hidden");
     }
@@ -128,21 +136,14 @@
     show(accountView);
   }
 
-  async function loadAccount() {
-    const data = await accountApi("me");
-    renderLibrary(data);
-  }
-
   emailForm.addEventListener("submit", async e => {
     e.preventDefault();
     sendButton.disabled = true;
     sendButton.textContent = "Enviando código...";
     loginMessage.textContent = "";
-    loginMessage.classList.remove("error");
-
     try {
-      const data = await sendCode(emailInput.value);
-      codeMessage.textContent = data.message || "Código enviado. Confira seu e-mail.";
+      await sendCode(emailInput.value);
+      codeMessage.textContent = "Código enviado. Confira seu e-mail.";
       codeMessage.classList.remove("error");
     } catch (error) {
       loginMessage.textContent = error.message || "Não foi possível enviar o código.";
@@ -155,8 +156,8 @@
 
   codeForm.addEventListener("submit", async e => {
     e.preventDefault();
-    const code = codeInput.value.replace(/\D/g, "").slice(0, 6);
-    if (code.length !== 6) {
+    const token = codeInput.value.replace(/\D/g, "").slice(0, 6);
+    if (token.length !== 6) {
       codeMessage.textContent = "Digite os 6 números do código.";
       codeMessage.classList.add("error");
       return;
@@ -165,15 +166,18 @@
     verifyButton.disabled = true;
     verifyButton.textContent = "Verificando...";
     codeMessage.textContent = "";
-    codeMessage.classList.remove("error");
 
     try {
-      const data = await accountApi("verify-code", { email: pendingEmail, code });
-      setSessionToken(data.sessionToken);
-      sessionStorage.removeItem(EMAIL_KEY);
-      renderLibrary(data);
-    } catch (error) {
-      codeMessage.textContent = error.message || "Código inválido ou expirado.";
+      const { error } = await sb.auth.verifyOtp({
+        email: pendingEmail,
+        token,
+        type: "email"
+      });
+      if (error) throw error;
+      sessionStorage.removeItem("hebooks-login-email");
+      await loadAccount();
+    } catch {
+      codeMessage.textContent = "Código inválido ou expirado. Solicite um novo código.";
       codeMessage.classList.add("error");
     } finally {
       verifyButton.disabled = false;
@@ -184,10 +188,10 @@
   resendButton.addEventListener("click", async () => {
     resendButton.disabled = true;
     codeMessage.textContent = "Enviando novo código...";
-    codeMessage.classList.remove("error");
     try {
-      const data = await sendCode(pendingEmail);
-      codeMessage.textContent = data.message || "Novo código enviado. Confira seu e-mail.";
+      await sendCode(pendingEmail);
+      codeMessage.textContent = "Novo código enviado. Confira seu e-mail.";
+      codeMessage.classList.remove("error");
     } catch (error) {
       codeMessage.textContent = error.message || "Não foi possível reenviar.";
       codeMessage.classList.add("error");
@@ -198,25 +202,23 @@
 
   changeEmailButton.addEventListener("click", () => {
     pendingEmail = "";
-    sessionStorage.removeItem(EMAIL_KEY);
+    sessionStorage.removeItem("hebooks-login-email");
     show(loginView);
     emailInput.focus();
   });
 
   logoutButton.addEventListener("click", async () => {
-    try { await accountApi("logout"); } catch {}
-    setSessionToken("");
+    await sb.auth.signOut();
     show(loginView);
   });
 
   (async () => {
-    if (getSessionToken()) {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
       try {
         await loadAccount();
         return;
-      } catch {
-        setSessionToken("");
-      }
+      } catch {}
     }
 
     if (pendingEmail) {
