@@ -109,7 +109,29 @@
     "Comunicação": "🎤",
     "Marketing": "✍️",
     "Ficção": "🌙",
-    "Suspense": "🔎"
+    "Suspense": "🔎",
+    "Idiomas": "🗣️",
+    "Tecnologia básica": "💻",
+    "Programação": "⌨️",
+    "Design": "🎨",
+    "Fotografia e vídeo": "📷",
+    "Música": "🎵",
+    "Artesanato": "🧵",
+    "Casa e decoração": "🏠",
+    "Jardinagem": "🌱",
+    "Viagem": "✈️",
+    "Educação e estudos": "📚",
+    "História": "🏛️",
+    "Geografia": "🌍",
+    "Ciências": "🔬",
+    "Matemática prática": "➗",
+    "Carreira": "💼",
+    "Pets": "🐾",
+    "Sustentabilidade": "♻️",
+    "Cultura e lazer": "🎭",
+    "Culinária": "🍳",
+    "Anime e cultura pop": "🍥",
+    "Bob Esponja - personagens": "🧽"
   };
 
   const themeClasses = ["violet","blue","teal","orange","rose","indigo","green","gold"];
