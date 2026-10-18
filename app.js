@@ -14,6 +14,9 @@
   const successView = document.getElementById("success-view");
   const ebookGrid = document.getElementById("ebook-grid");
   const catalogCount = document.getElementById("catalog-count");
+  const mobileCatalogSearch = document.getElementById("mobile-catalog-search");
+  const mobileCatalogCategory = document.getElementById("mobile-catalog-category");
+  const mobileLibraryButton = document.getElementById("mobile-library-button");
 
   const checkoutCover = document.getElementById("checkout-cover");
   const checkoutCoverTitle = document.getElementById("checkout-cover-title");
@@ -237,6 +240,12 @@
     button.classList.toggle("owned", purchased);
   }
 
+  function startDirectDownload(url) {
+    const safeUrl = String(url || "").trim();
+    if (!safeUrl) throw new Error("Link do eBook não encontrado.");
+    window.location.assign(safeUrl);
+  }
+
   function setView(view) {
     [checkoutView, authView, accountView, successView].forEach(el => el && el.classList.add("hidden"));
     if (view) view.classList.remove("hidden");
@@ -254,6 +263,15 @@
     modal.setAttribute("aria-hidden", "true");
     document.body.style.overflow = "";
   }
+
+  downloadButton.addEventListener("click", event => {
+    event.preventDefault();
+    try {
+      startDirectDownload(downloadButton.href);
+    } catch (error) {
+      alert(error.message || "Não foi possível iniciar o download.");
+    }
+  });
 
   document.querySelectorAll("[data-close-modal]").forEach(el => {
     el.addEventListener("click", closeModal);
@@ -432,7 +450,7 @@
           button.textContent = "Gerando...";
           try {
             const data = await accountApi("download", { purchaseId: purchase.id });
-            window.open(data.downloadUrl, "_blank", "noopener");
+            startDirectDownload(data.downloadUrl);
           } catch (error) {
             alert(error.message || "Não foi possível gerar o download.");
           } finally {
@@ -452,11 +470,44 @@
     openModal();
   }
 
+  function populateMobileCatalogCategories() {
+    if (!mobileCatalogCategory) return;
+    const categories = [...new Set(products.map(p => String(p.category || "").trim()).filter(Boolean))]
+      .sort((a,b) => a.localeCompare(b, "pt-BR"));
+    mobileCatalogCategory.innerHTML = '<option value="">Todas as categorias</option>';
+    categories.forEach(category => {
+      const option = document.createElement("option");
+      option.value = category;
+      option.textContent = category;
+      mobileCatalogCategory.appendChild(option);
+    });
+  }
+
   function renderCatalog() {
     ebookGrid.innerHTML = "";
-    catalogCount.textContent = products.length + " eBooks disponíveis";
 
-    products.forEach((product, index) => {
+    const searchTerm = String(mobileCatalogSearch?.value || "").trim().toLocaleLowerCase("pt-BR");
+    const categoryFilter = String(mobileCatalogCategory?.value || "").trim();
+
+    const visibleProducts = products.filter(product => {
+      const haystack = [product.title, product.subtitle, product.description, product.category]
+        .map(value => String(value || "").toLocaleLowerCase("pt-BR"))
+        .join(" ");
+      const matchesSearch = !searchTerm || haystack.includes(searchTerm);
+      const matchesCategory = !categoryFilter || String(product.category || "") === categoryFilter;
+      return matchesSearch && matchesCategory;
+    });
+
+    catalogCount.textContent = visibleProducts.length === products.length
+      ? products.length + " eBooks disponíveis"
+      : visibleProducts.length + " de " + products.length + " eBooks";
+
+    if (!visibleProducts.length) {
+      ebookGrid.innerHTML = '<div class="catalog-error">Nenhum eBook encontrado.</div>';
+      return;
+    }
+
+    visibleProducts.forEach((product, index) => {
       const theme = themeClasses[index % themeClasses.length];
       const icon = categoryIcons[product.category] || "📘";
       const owned = !!readStorage(purchaseKey(product.id));
@@ -503,6 +554,13 @@
     return String(value ?? "").replace(/[&<>"']/g, char => ({
       "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;"
     })[char]);
+  }
+
+  if (mobileCatalogSearch) {
+    mobileCatalogSearch.addEventListener("input", renderCatalog);
+  }
+  if (mobileCatalogCategory) {
+    mobileCatalogCategory.addEventListener("change", renderCatalog);
   }
 
   async function handleProductClick(product) {
@@ -835,6 +893,10 @@
     });
   }
 
+  if (mobileLibraryButton) {
+    mobileLibraryButton.addEventListener("click", () => accountButton.click());
+  }
+
   accountButton.addEventListener("click", async () => {
     const { data: { session } } = await sb.auth.getSession();
     if (session) {
@@ -901,6 +963,7 @@
   async function loadCatalog() {
     try {
       products = await catalogApi();
+      populateMobileCatalogCategories();
       renderCatalog();
     } catch (error) {
       catalogCount.textContent = "Não foi possível carregar o catálogo";
