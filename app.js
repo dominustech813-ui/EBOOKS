@@ -67,6 +67,23 @@
   const accountLibrary = document.getElementById("account-library");
   const logoutButton = document.getElementById("logout-button");
 
+  const globalAuthGate = document.getElementById("global-auth-gate");
+  const gateTitle = document.getElementById("gate-title");
+  const gateSubtitle = document.getElementById("gate-subtitle");
+  const gateMessage = document.getElementById("gate-message");
+  const gateTabRegister = document.getElementById("gate-tab-register");
+  const gateTabLogin = document.getElementById("gate-tab-login");
+  const gateRegisterForm = document.getElementById("gate-register-form");
+  const gateRegisterEmail = document.getElementById("gate-register-email");
+  const gateRegisterPassword = document.getElementById("gate-register-password");
+  const gateRegisterButton = document.getElementById("gate-register-button");
+  const gateLoginForm = document.getElementById("gate-login-form");
+  const gateLoginEmail = document.getElementById("gate-login-email");
+  const gateLoginPassword = document.getElementById("gate-login-password");
+  const gateLoginButton = document.getElementById("gate-login-button");
+  const gateGithubButton = document.getElementById("gate-github-button");
+  const gateGithubNote = document.getElementById("gate-github-note");
+
   let products = [];
   let selectedProduct = null;
   let automaticPayments = false;
@@ -76,6 +93,7 @@
   let pendingClaimToken = "";
   let pendingClaimMethod = "";
   let pendingBuyerEmail = "";
+  let appInitialized = false;
 
   const categoryIcons = {
     "Saúde": "🏃",
@@ -97,6 +115,52 @@
   const themeClasses = ["violet","blue","teal","orange","rose","indigo","green","gold"];
 
   document.getElementById("year").textContent = new Date().getFullYear();
+
+  function switchGateTab(mode) {
+    const register = mode === "register";
+    gateTabRegister.classList.toggle("active", register);
+    gateTabLogin.classList.toggle("active", !register);
+    gateRegisterForm.classList.toggle("hidden", !register);
+    gateLoginForm.classList.toggle("hidden", register);
+    gateTitle.textContent = register ? "Crie sua conta" : "Entre na sua conta";
+    gateSubtitle.textContent = register
+      ? "Você precisa criar uma conta para acessar o catálogo do H ebooks."
+      : "Entre para acessar o catálogo e sua biblioteca.";
+    gateMessage.textContent = "";
+    gateMessage.classList.remove("error");
+  }
+
+  async function lockSite() {
+    document.body.classList.add("auth-locked");
+    closeModal();
+    accountButton.textContent = "Entrar";
+    switchGateTab("register");
+  }
+
+  async function unlockSite(session) {
+    document.body.classList.remove("auth-locked");
+    accountButton.textContent = "Minha biblioteca";
+
+    const email = String(session?.user?.email || "").trim().toLowerCase();
+    if (email) {
+      pixEmail.value = email;
+      cardEmail.value = email;
+      pixEmail.readOnly = true;
+      cardEmail.readOnly = true;
+    }
+
+    if (!appInitialized) {
+      appInitialized = true;
+      await Promise.all([loadCatalog(), refreshPaymentConfig()]);
+      await handleCardReturn();
+    }
+  }
+
+  async function completeGateLogin(email, password) {
+    const { data, error } = await sb.auth.signInWithPassword({ email, password });
+    if (error || !data?.session) throw new Error("E-mail ou senha inválidos.");
+    await unlockSite(data.session);
+  }
 
   function purchaseKey(productId) {
     return "hebooks:purchase:" + productId;
@@ -611,6 +675,67 @@
     cardStatus.textContent = "Pagamento ainda não confirmado. Aguarde alguns instantes e tente novamente.";
   }
 
+  gateTabRegister.addEventListener("click", () => switchGateTab("register"));
+  gateTabLogin.addEventListener("click", () => switchGateTab("login"));
+
+  gateRegisterForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    gateRegisterButton.disabled = true;
+    gateRegisterButton.textContent = "Criando conta...";
+    gateMessage.textContent = "";
+    gateMessage.classList.remove("error");
+
+    try {
+      const email = gateRegisterEmail.value.trim().toLowerCase();
+      const password = gateRegisterPassword.value;
+
+      await accountApi("register", { email, password }, false);
+      await completeGateLogin(email, password);
+    } catch (error) {
+      gateMessage.textContent = error.message || "Não foi possível criar sua conta.";
+      gateMessage.classList.add("error");
+    } finally {
+      gateRegisterButton.disabled = false;
+      gateRegisterButton.textContent = "Criar minha conta";
+    }
+  });
+
+  gateLoginForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    gateLoginButton.disabled = true;
+    gateLoginButton.textContent = "Entrando...";
+    gateMessage.textContent = "";
+    gateMessage.classList.remove("error");
+
+    try {
+      await completeGateLogin(
+        gateLoginEmail.value.trim().toLowerCase(),
+        gateLoginPassword.value
+      );
+    } catch (error) {
+      gateMessage.textContent = error.message || "Não foi possível entrar.";
+      gateMessage.classList.add("error");
+    } finally {
+      gateLoginButton.disabled = false;
+      gateLoginButton.textContent = "Entrar no H ebooks";
+    }
+  });
+
+  if (config.githubEnabled) {
+    gateGithubButton.disabled = false;
+    gateGithubNote.textContent = "Use sua conta GitHub para entrar.";
+    gateGithubButton.addEventListener("click", async () => {
+      const { error } = await sb.auth.signInWithOAuth({
+        provider: "github",
+        options: { redirectTo: "https://dominustech813-ui.github.io/EBOOKS/" }
+      });
+      if (error) {
+        gateMessage.textContent = error.message || "Não foi possível entrar com GitHub.";
+        gateMessage.classList.add("error");
+      }
+    });
+  }
+
   authTabRegister.addEventListener("click", () => switchAuthTab("register"));
   authTabLogin.addEventListener("click", () => switchAuthTab("login"));
 
@@ -695,8 +820,11 @@
 
   logoutButton.addEventListener("click", async () => {
     await sb.auth.signOut();
-    accountButton.textContent = "Entrar";
-    closeModal();
+    pixEmail.readOnly = false;
+    cardEmail.readOnly = false;
+    pixEmail.value = "";
+    cardEmail.value = "";
+    await lockSite();
   });
 
   supportButton.addEventListener("click", async () => {
@@ -748,8 +876,15 @@
   }
 
   async function init() {
-    await Promise.all([loadCatalog(), refreshPaymentConfig()]);
-    await refreshAccountButton();
+    switchGateTab("register");
+
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      document.body.classList.add("auth-locked");
+      return;
+    }
+
+    await unlockSite(session);
 
     const storedClaim = readStorage("hebooks:pending-claim");
     if (storedClaim?.checkoutToken) {
@@ -759,9 +894,6 @@
       selectedProduct = products.find(p => p.id === storedClaim.productId) || null;
     }
 
-    await handleCardReturn();
-
-    const { data: { session } } = await sb.auth.getSession();
     if (session && pendingClaimToken && !new URLSearchParams(window.location.search).get("card_return")) {
       try { await claimAndRelease(); } catch {}
     }
