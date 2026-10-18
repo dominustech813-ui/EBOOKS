@@ -14,10 +14,6 @@
   const successView = document.getElementById("success-view");
   const ebookGrid = document.getElementById("ebook-grid");
   const catalogCount = document.getElementById("catalog-count");
-  const priceTableBody = document.getElementById("price-table-body");
-  const priceSearch = document.getElementById("price-search");
-  const priceCategory = document.getElementById("price-category");
-  const priceCount = document.getElementById("price-count");
 
   const checkoutCover = document.getElementById("checkout-cover");
   const checkoutCoverTitle = document.getElementById("checkout-cover-title");
@@ -233,14 +229,12 @@
   }
 
   function updateProductButton(productId, purchased) {
-    const buttons = document.querySelectorAll('[data-buy-product="' + CSS.escape(productId) + '"]');
-    buttons.forEach(button => {
-      const compact = button.classList.contains("price-buy-button");
-      button.textContent = purchased
-        ? "Baixar meu eBook"
-        : (compact ? "Comprar" : "Comprar por " + money.format(Number(button.dataset.price || 0)));
-      button.classList.toggle("owned", purchased);
-    });
+    const button = document.querySelector('[data-buy-product="' + CSS.escape(productId) + '"]');
+    if (!button) return;
+    button.textContent = purchased ? "Baixar meu eBook" : "Comprar por " + money.format(
+      Number(button.dataset.price || 0)
+    );
+    button.classList.toggle("owned", purchased);
   }
 
   function setView(view) {
@@ -504,85 +498,6 @@
     });
   }
 
-
-  function populatePriceCategories() {
-    if (!priceCategory) return;
-
-    const current = priceCategory.value;
-    const categories = [...new Set(
-      products
-        .map(product => String(product.category || "").trim())
-        .filter(Boolean)
-    )].sort((a, b) => a.localeCompare(b, "pt-BR"));
-
-    priceCategory.innerHTML =
-      '<option value="">Todas as categorias</option>' +
-      categories.map(category =>
-        '<option value="' + escapeHtml(category) + '">' + escapeHtml(category) + '</option>'
-      ).join("");
-
-    if (categories.includes(current)) priceCategory.value = current;
-  }
-
-  function renderPriceTable() {
-    if (!priceTableBody) return;
-
-    const term = String(priceSearch?.value || "").trim().toLocaleLowerCase("pt-BR");
-    const category = String(priceCategory?.value || "").trim();
-
-    const filtered = products.filter(product => {
-      const title = String(product.title || "").toLocaleLowerCase("pt-BR");
-      const subtitle = String(product.subtitle || "").toLocaleLowerCase("pt-BR");
-      const productCategory = String(product.category || "").trim();
-      const matchesSearch = !term || title.includes(term) || subtitle.includes(term) || productCategory.toLocaleLowerCase("pt-BR").includes(term);
-      const matchesCategory = !category || productCategory === category;
-      return matchesSearch && matchesCategory;
-    });
-
-    priceTableBody.innerHTML = "";
-    if (priceCount) priceCount.textContent = filtered.length + " eBooks";
-
-    if (!filtered.length) {
-      priceTableBody.innerHTML = '<tr><td colspan="4" class="price-empty">Nenhum eBook encontrado com esses filtros.</td></tr>';
-      return;
-    }
-
-    filtered.forEach(product => {
-      const row = document.createElement("tr");
-
-      const titleCell = document.createElement("td");
-      titleCell.dataset.label = "eBook";
-      titleCell.innerHTML =
-        '<strong>' + escapeHtml(product.title) + '</strong>' +
-        '<span>' + escapeHtml(product.subtitle || "") + '</span>';
-
-      const categoryCell = document.createElement("td");
-      categoryCell.dataset.label = "Categoria";
-      categoryCell.innerHTML = '<span class="price-category-chip">' + escapeHtml(product.category || "H ebooks") + '</span>';
-
-      const priceCell = document.createElement("td");
-      priceCell.dataset.label = "Preço";
-      priceCell.innerHTML = '<strong class="price-table-value">' + money.format(Number(product.price)) + '</strong>';
-
-      const actionCell = document.createElement("td");
-      actionCell.dataset.label = "Comprar";
-      const owned = !!readStorage(purchaseKey(product.id));
-      const button = document.createElement("button");
-      button.type = "button";
-      button.className = "btn btn-small price-buy-button" + (owned ? " owned" : "");
-      button.dataset.buyProduct = product.id;
-      button.dataset.price = product.price;
-      button.textContent = owned ? "Baixar meu eBook" : "Comprar";
-      button.addEventListener("click", () => handleProductClick(product));
-      actionCell.appendChild(button);
-
-      row.append(titleCell, categoryCell, priceCell, actionCell);
-      priceTableBody.appendChild(row);
-    });
-  }
-
-  if (priceSearch) priceSearch.addEventListener("input", renderPriceTable);
-  if (priceCategory) priceCategory.addEventListener("change", renderPriceTable);
 
   function escapeHtml(value) {
     return String(value ?? "").replace(/[&<>"']/g, char => ({
@@ -977,8 +892,6 @@
     try {
       products = await catalogApi();
       renderCatalog();
-      populatePriceCategories();
-      renderPriceTable();
     } catch (error) {
       catalogCount.textContent = "Não foi possível carregar o catálogo";
       ebookGrid.innerHTML = '<div class="catalog-error">' + escapeHtml(error.message || "Tente novamente em instantes.") + '</div>';
