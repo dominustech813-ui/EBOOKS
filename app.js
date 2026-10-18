@@ -5,6 +5,10 @@
     currency: config.currency || "BRL"
   });
 
+  const sb = window.supabase.createClient(config.supabaseUrl, config.supabasePublishableKey, {
+    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
+  });
+
   const modal = document.getElementById("checkout-modal");
   const checkoutView = document.getElementById("checkout-view");
   const successView = document.getElementById("success-view");
@@ -41,6 +45,27 @@
   const supportButton = document.getElementById("support-button");
   const downloadButton = document.getElementById("download-button");
   const successProductName = document.getElementById("success-product-name");
+  const authView = document.getElementById("auth-view");
+  const accountView = document.getElementById("account-view");
+  const accountButton = document.getElementById("account-button");
+  const authTitle = document.getElementById("auth-title");
+  const authContext = document.getElementById("auth-context");
+  const authMessage = document.getElementById("auth-message");
+  const authTabRegister = document.getElementById("auth-tab-register");
+  const authTabLogin = document.getElementById("auth-tab-login");
+  const registerForm = document.getElementById("register-form");
+  const registerEmail = document.getElementById("register-email");
+  const registerPassword = document.getElementById("register-password");
+  const registerButton = document.getElementById("register-button");
+  const loginForm = document.getElementById("login-form");
+  const loginEmail = document.getElementById("login-email");
+  const loginPassword = document.getElementById("login-password");
+  const loginButton = document.getElementById("login-button");
+  const githubButton = document.getElementById("github-login-button");
+  const githubNote = document.getElementById("github-note");
+  const accountEmail = document.getElementById("account-email");
+  const accountLibrary = document.getElementById("account-library");
+  const logoutButton = document.getElementById("logout-button");
 
   let products = [];
   let selectedProduct = null;
@@ -48,6 +73,9 @@
   let checkoutToken = "";
   let pollTimer = null;
   let pollCount = 0;
+  let pendingClaimToken = "";
+  let pendingClaimMethod = "";
+  let pendingBuyerEmail = "";
 
   const categoryIcons = {
     "Saúde": "🏃",
@@ -124,7 +152,7 @@
   }
 
   function setView(view) {
-    [checkoutView, successView].forEach(el => el && el.classList.add("hidden"));
+    [checkoutView, authView, accountView, successView].forEach(el => el && el.classList.add("hidden"));
     if (view) view.classList.remove("hidden");
   }
 
@@ -200,8 +228,142 @@
     return api(config.cardProApiUrl, payload);
   }
 
-  async function accessApi(token) {
-    return api(config.ebookAccessApiUrl, { checkoutToken: token });
+  async function accountApi(action, extra = {}, requireAuth = true) {
+    const headers = { "Content-Type": "application/json" };
+    if (requireAuth) {
+      const { data: { session } } = await sb.auth.getSession();
+      if (!session?.access_token) {
+        const error = new Error("Entre na sua conta para continuar.");
+        error.status = 401;
+        throw error;
+      }
+      headers.Authorization = "Bearer " + session.access_token;
+      headers.apikey = config.supabasePublishableKey;
+    }
+
+    const response = await fetch(config.accountApiUrl, {
+      method: "POST",
+      headers,
+      body: JSON.stringify({ action, ...extra })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const error = new Error(data.error || "Não foi possível acessar sua conta.");
+      error.status = response.status;
+      throw error;
+    }
+    return data;
+  }
+
+  function switchAuthTab(mode) {
+    const register = mode === "register";
+    authTabRegister.classList.toggle("active", register);
+    authTabLogin.classList.toggle("active", !register);
+    registerForm.classList.toggle("hidden", !register);
+    loginForm.classList.toggle("hidden", register);
+    authMessage.textContent = "";
+  }
+
+  async function refreshAccountButton() {
+    const { data: { session } } = await sb.auth.getSession();
+    accountButton.textContent = session ? "Minha biblioteca" : "Entrar";
+  }
+
+  async function showAuthGate(product, token, buyerEmail = "", method = "") {
+    selectedProduct = product || selectedProduct;
+    pendingClaimToken = token || "";
+    pendingClaimMethod = method || "";
+    pendingBuyerEmail = String(buyerEmail || "").trim().toLowerCase();
+
+    const pending = {
+      checkoutToken: pendingClaimToken,
+      productId: selectedProduct?.id || "",
+      method: pendingClaimMethod,
+      buyerEmail: pendingBuyerEmail
+    };
+    writeStorage("hebooks:pending-claim", pending);
+
+    if (pendingBuyerEmail) {
+      registerEmail.value = pendingBuyerEmail;
+      loginEmail.value = pendingBuyerEmail;
+    }
+
+    const { data: { session } } = await sb.auth.getSession();
+    if (session && pendingClaimToken) {
+      try {
+        await claimAndRelease();
+        return;
+      } catch (error) {
+        if (error.status !== 401) {
+          authMessage.textContent = error.message || "Não foi possível vincular a compra à sua conta.";
+          authMessage.classList.add("error");
+        }
+      }
+    }
+
+    authTitle.textContent = pendingClaimToken ? "Crie sua conta para liberar o eBook" : "Entre na sua conta H ebooks";
+    authContext.textContent = pendingClaimToken
+      ? "Seu pagamento foi confirmado. Use o mesmo e-mail informado na compra para guardar este eBook na sua biblioteca."
+      : "Entre para acessar os eBooks que você já comprou.";
+    switchAuthTab(pendingClaimToken ? "register" : "login");
+    setView(authView);
+    openModal();
+  }
+
+  async function claimAndRelease() {
+    if (!pendingClaimToken) throw new Error("Compra não encontrada para vincular.");
+    const data = await accountApi("claim", { checkoutToken: pendingClaimToken });
+    const productId = data.productId || selectedProduct?.id;
+    if (productId) savePurchase(productId, pendingClaimToken, pendingClaimMethod || "account");
+    removeStorage("hebooks:pending-claim");
+    removeStorage("hebooks:last-card-pending");
+    downloadButton.href = data.downloadUrl;
+    successProductName.textContent = data.productName || selectedProduct?.title || "Seu eBook";
+    setView(successView);
+    await refreshAccountButton();
+  }
+
+  async function loadLibrary() {
+    const data = await accountApi("me");
+    accountEmail.textContent = data.user.email;
+    accountLibrary.innerHTML = "";
+
+    if (!data.purchases?.length) {
+      accountLibrary.innerHTML = '<div class="empty-library">Você ainda não tem eBooks liberados nesta conta.</div>';
+    } else {
+      data.purchases.forEach(purchase => {
+        const item = document.createElement("div");
+        item.className = "account-book-item";
+        const title = purchase.product?.title || "eBook H ebooks";
+        const info = document.createElement("div");
+        info.innerHTML = '<strong>' + escapeHtml(title) + '</strong><span>Compra aprovada</span>';
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "btn btn-small";
+        button.textContent = "Baixar";
+        button.addEventListener("click", async () => {
+          button.disabled = true;
+          button.textContent = "Gerando...";
+          try {
+            const data = await accountApi("download", { purchaseId: purchase.id });
+            window.open(data.downloadUrl, "_blank", "noopener");
+          } catch (error) {
+            alert(error.message || "Não foi possível gerar o download.");
+          } finally {
+            button.disabled = false;
+            button.textContent = "Baixar";
+          }
+        });
+        item.append(info, button);
+        accountLibrary.appendChild(item);
+
+        if (purchase.product_id && purchase.checkout_token) {
+          savePurchase(purchase.product_id, purchase.checkout_token, "account");
+        }
+      });
+    }
+    setView(accountView);
+    openModal();
   }
 
   function renderCatalog() {
@@ -259,27 +421,9 @@
   async function handleProductClick(product) {
     const owned = readStorage(purchaseKey(product.id));
     if (owned?.checkoutToken) {
-      openModal();
-      setView(checkoutView);
       applyProductToCheckout(product);
-      paymentStatus.textContent = "Recuperando sua compra...";
-      pixArea.classList.add("hidden");
-      try {
-        const data = await accessApi(owned.checkoutToken);
-        if (data.approved && data.downloadUrl) {
-          downloadButton.href = data.downloadUrl;
-          successProductName.textContent = data.productName || product.title;
-          setView(successView);
-          return;
-        }
-        clearPurchase(product.id);
-      } catch (error) {
-        if (error.status === 400 || error.status === 404) clearPurchase(product.id);
-        else {
-          paymentStatus.textContent = error.message || "Não foi possível recuperar sua compra agora.";
-          return;
-        }
-      }
+      await showAuthGate(product, owned.checkoutToken, "", owned.method || "account");
+      return;
     }
 
     if (!automaticPayments) {
@@ -364,12 +508,14 @@
 
     try {
       const data = await checkoutApi({ action: "status", checkoutToken });
-      if (data.approved && data.downloadUrl) {
+      if (data.approved) {
         clearTimeout(pollTimer);
-        savePurchase(data.productId || selectedProduct.id, checkoutToken, "pix");
-        downloadButton.href = data.downloadUrl;
-        successProductName.textContent = data.productName || selectedProduct.title;
-        setView(successView);
+        await showAuthGate(
+          products.find(p => p.id === data.productId) || selectedProduct,
+          checkoutToken,
+          data.buyerEmail || pixEmail.value.trim(),
+          "pix"
+        );
         return;
       }
 
@@ -442,12 +588,13 @@
         const product = products.find(p => p.id === data.productId) || selectedProduct;
         if (product) applyProductToCheckout(product);
 
-        if (data.approved && data.downloadUrl) {
-          if (data.productId) savePurchase(data.productId, token, "card");
-          removeStorage("hebooks:last-card-pending");
-          downloadButton.href = data.downloadUrl;
-          successProductName.textContent = data.productName || product?.title || "Seu eBook";
-          setView(successView);
+        if (data.approved) {
+          await showAuthGate(
+            product,
+            token,
+            data.buyerEmail || "",
+            "card"
+          );
           return;
         }
 
@@ -463,6 +610,94 @@
 
     cardStatus.textContent = "Pagamento ainda não confirmado. Aguarde alguns instantes e tente novamente.";
   }
+
+  authTabRegister.addEventListener("click", () => switchAuthTab("register"));
+  authTabLogin.addEventListener("click", () => switchAuthTab("login"));
+
+  registerForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    registerButton.disabled = true;
+    registerButton.textContent = "Criando conta...";
+    authMessage.textContent = "";
+
+    try {
+      const email = registerEmail.value.trim().toLowerCase();
+      const password = registerPassword.value;
+      await accountApi("register", { email, password }, false);
+
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+
+      if (pendingClaimToken) await claimAndRelease();
+      else await loadLibrary();
+    } catch (error) {
+      authMessage.textContent = error.message || "Não foi possível criar a conta.";
+      authMessage.classList.add("error");
+    } finally {
+      registerButton.disabled = false;
+      registerButton.textContent = pendingClaimToken ? "Criar conta e liberar eBook" : "Criar conta";
+    }
+  });
+
+  loginForm.addEventListener("submit", async event => {
+    event.preventDefault();
+    loginButton.disabled = true;
+    loginButton.textContent = "Entrando...";
+    authMessage.textContent = "";
+
+    try {
+      const email = loginEmail.value.trim().toLowerCase();
+      const password = loginPassword.value;
+      const { error } = await sb.auth.signInWithPassword({ email, password });
+      if (error) throw new Error("E-mail ou senha inválidos.");
+
+      if (pendingClaimToken) await claimAndRelease();
+      else await loadLibrary();
+    } catch (error) {
+      authMessage.textContent = error.message || "Não foi possível entrar.";
+      authMessage.classList.add("error");
+    } finally {
+      loginButton.disabled = false;
+      loginButton.textContent = "Entrar na minha conta";
+    }
+  });
+
+  if (config.githubEnabled) {
+    githubButton.disabled = false;
+    githubNote.textContent = "Use sua conta GitHub para entrar.";
+    githubButton.addEventListener("click", async () => {
+      const { error } = await sb.auth.signInWithOAuth({
+        provider: "github",
+        options: { redirectTo: "https://dominustech813-ui.github.io/EBOOKS/" }
+      });
+      if (error) {
+        authMessage.textContent = error.message || "Não foi possível entrar com GitHub.";
+        authMessage.classList.add("error");
+      }
+    });
+  }
+
+  accountButton.addEventListener("click", async () => {
+    const { data: { session } } = await sb.auth.getSession();
+    if (session) {
+      try {
+        await loadLibrary();
+      } catch (error) {
+        alert(error.message || "Não foi possível abrir sua biblioteca.");
+      }
+    } else {
+      pendingClaimToken = "";
+      pendingClaimMethod = "";
+      pendingBuyerEmail = "";
+      await showAuthGate(null, "", "", "");
+    }
+  });
+
+  logoutButton.addEventListener("click", async () => {
+    await sb.auth.signOut();
+    accountButton.textContent = "Entrar";
+    closeModal();
+  });
 
   supportButton.addEventListener("click", async () => {
     const name = (pixName.value || cardName.value || "").trim();
@@ -514,7 +749,22 @@
 
   async function init() {
     await Promise.all([loadCatalog(), refreshPaymentConfig()]);
+    await refreshAccountButton();
+
+    const storedClaim = readStorage("hebooks:pending-claim");
+    if (storedClaim?.checkoutToken) {
+      pendingClaimToken = storedClaim.checkoutToken;
+      pendingClaimMethod = storedClaim.method || "";
+      pendingBuyerEmail = storedClaim.buyerEmail || "";
+      selectedProduct = products.find(p => p.id === storedClaim.productId) || null;
+    }
+
     await handleCardReturn();
+
+    const { data: { session } } = await sb.auth.getSession();
+    if (session && pendingClaimToken && !new URLSearchParams(window.location.search).get("card_return")) {
+      try { await claimAndRelease(); } catch {}
+    }
   }
 
   init();
