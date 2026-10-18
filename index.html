@@ -17,7 +17,63 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="styles.css" />
 </head>
-<body>
+<body class="auth-locked">
+  <section id="global-auth-gate" class="global-auth-gate" aria-label="Acesso H ebooks">
+    <div class="global-auth-art">
+      <a class="brand gate-brand" href="#" aria-label="H ebooks"><span class="brand-mark">H</span><span>ebooks</span></a>
+      <div class="gate-art-copy">
+        <span class="eyebrow">BIBLIOTECA DIGITAL H EBOOKS</span>
+        <h1>Entre para descobrir sua próxima leitura.</h1>
+        <p>Crie sua conta gratuitamente para acessar o catálogo, comprar e guardar seus eBooks na sua biblioteca.</p>
+        <div class="gate-benefits">
+          <span>✓ Sua biblioteca em um só lugar</span>
+          <span>✓ Pix ou cartão</span>
+          <span>✓ Download após confirmação</span>
+        </div>
+      </div>
+      <div class="gate-books">
+        <div class="gate-book one"><small>H ebooks</small><strong>Foco<br>Inabalável</strong></div>
+        <div class="gate-book two"><small>H ebooks</small><strong>IA no<br>Trabalho</strong></div>
+        <div class="gate-book three"><small>H ebooks</small><strong>Renda Extra<br>Digital</strong></div>
+      </div>
+    </div>
+
+    <div class="global-auth-panel">
+      <div class="global-auth-card">
+        <div class="gate-mobile-brand"><span class="brand-mark">H</span><strong>ebooks</strong></div>
+        <span class="eyebrow">BEM-VINDO</span>
+        <h2 id="gate-title">Crie sua conta</h2>
+        <p id="gate-subtitle">Você precisa estar conectado para acessar o H ebooks.</p>
+
+        <div class="auth-tabs gate-tabs">
+          <button type="button" class="auth-tab active" id="gate-tab-register">Criar conta</button>
+          <button type="button" class="auth-tab" id="gate-tab-login">Entrar</button>
+        </div>
+
+        <form id="gate-register-form" class="checkout-form">
+          <label>Seu e-mail<input id="gate-register-email" type="email" autocomplete="email" required placeholder="voce@email.com" /></label>
+          <label>Crie uma senha<input id="gate-register-password" type="password" autocomplete="new-password" minlength="8" required placeholder="Mínimo de 8 caracteres" /></label>
+          <button class="btn btn-large full" id="gate-register-button" type="submit">Criar minha conta</button>
+        </form>
+
+        <form id="gate-login-form" class="checkout-form hidden">
+          <label>Seu e-mail<input id="gate-login-email" type="email" autocomplete="email" required placeholder="voce@email.com" /></label>
+          <label>Sua senha<input id="gate-login-password" type="password" autocomplete="current-password" minlength="8" required placeholder="Sua senha" /></label>
+          <button class="btn btn-large full" id="gate-login-button" type="submit">Entrar no H ebooks</button>
+        </form>
+
+        <div class="auth-divider"><span>ou</span></div>
+        <button class="provider-button github" id="gate-github-button" type="button" disabled>
+          <span class="provider-icon">GH</span>
+          <span>Continuar com GitHub</span>
+        </button>
+        <small class="privacy-note" id="gate-github-note">GitHub será liberado quando o provedor estiver configurado.</small>
+        <p class="form-message" id="gate-message" role="status"></p>
+        <small class="gate-security">🔒 Sua senha é protegida pelo Supabase Auth e não fica visível para o H ebooks.</small>
+      </div>
+    </div>
+  </section>
+
   <div class="topbar">⚡ 15 eBooks disponíveis • Pix ou cartão • Liberação digital</div>
 
   <header class="nav container">
