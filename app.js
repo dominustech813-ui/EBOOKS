@@ -167,8 +167,8 @@
     if (email) {
       pixEmail.value = email;
       cardEmail.value = email;
-      pixEmail.readOnly = true;
-      cardEmail.readOnly = true;
+      pixEmail.readOnly = false;
+      cardEmail.readOnly = false;
     }
 
     if (!appInitialized) {
@@ -523,6 +523,16 @@
     clearTimeout(pollTimer);
     pixForm.reset();
     cardForm.reset();
+
+    const { data: { session } } = await sb.auth.getSession();
+    const accountEmailForCheckout = String(session?.user?.email || "").trim().toLowerCase();
+    if (accountEmailForCheckout) {
+      pixEmail.value = accountEmailForCheckout;
+      cardEmail.value = accountEmailForCheckout;
+    }
+    pixEmail.readOnly = false;
+    cardEmail.readOnly = false;
+
     pixArea.classList.add("hidden");
     paymentStatus.textContent = "Aguardando pagamento...";
     cardStatus.textContent = "";
