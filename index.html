@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=202610181358" />
+  <link rel="stylesheet" href="styles.css?v=202610181504" />
 
   <style id="auth-critical">
     body.auth-locked{margin:0;overflow:hidden;background:#f7f6fc}
@@ -115,6 +115,7 @@
     <a class="brand" href="#inicio" aria-label="H ebooks"><span class="brand-mark">H</span><span>ebooks</span></a>
     <nav>
       <a href="#catalogo">Catálogo</a>
+      <a href="#precos">Tabela de preços</a>
       <a href="#pagamento">Pagamento</a>
       <a href="#como-funciona">Como funciona</a>
     </nav>
@@ -163,6 +164,50 @@
         </div>
 
         <div id="ebook-grid" class="ebook-grid" aria-live="polite"></div>
+      </div>
+    </section>
+
+
+    <section id="precos" class="section price-table-section">
+      <div class="container">
+        <div class="section-heading">
+          <span class="eyebrow">TABELA DE PREÇOS</span>
+          <h2>Preços de todos os eBooks.</h2>
+          <p>Consulte o valor de qualquer título do H ebooks. A tabela usa o mesmo preço do catálogo e do checkout.</p>
+        </div>
+
+        <div class="price-toolbar">
+          <label class="price-field">
+            <span>Buscar eBook</span>
+            <input id="price-search" type="search" placeholder="Digite o nome do eBook..." autocomplete="off" />
+          </label>
+
+          <label class="price-field">
+            <span>Categoria</span>
+            <select id="price-category">
+              <option value="">Todas as categorias</option>
+            </select>
+          </label>
+
+          <div class="price-count-box">
+            <small>Exibindo</small>
+            <strong id="price-count">Carregando...</strong>
+          </div>
+        </div>
+
+        <div class="price-table-wrap">
+          <table class="price-table">
+            <thead>
+              <tr>
+                <th>eBook</th>
+                <th>Categoria</th>
+                <th>Preço</th>
+                <th>Comprar</th>
+              </tr>
+            </thead>
+            <tbody id="price-table-body"></tbody>
+          </table>
+        </div>
       </div>
     </section>
 
@@ -336,6 +381,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js?v=202610181358"></script>
-  <script src="app.js?v=202610181358"></script>
+  <script src="app.js?v=202610181504"></script>
 </body>
 </html>
