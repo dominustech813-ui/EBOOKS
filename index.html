@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=202610181535" />
+  <link rel="stylesheet" href="styles.css?v=202610181600" />
 
   <style id="auth-critical">
     body.auth-locked{margin:0;overflow:hidden;background:#f7f6fc}
@@ -149,6 +149,16 @@
           <span class="eyebrow">ESCOLHA SEU PRÓXIMO EBOOK</span>
           <h2>Uma biblioteca para diferentes objetivos.</h2>
           <p>Todos os títulos abaixo estão disponíveis para compra individual e acesso digital.</p>
+        </div>
+
+        <div class="mobile-catalog-tools">
+          <div class="mobile-search-wrap">
+            <span class="mobile-search-icon">⌕</span>
+            <input id="mobile-catalog-search" type="search" inputmode="search" autocomplete="off" placeholder="Buscar eBook..." />
+          </div>
+          <select id="mobile-catalog-category" aria-label="Filtrar por categoria">
+            <option value="">Todas as categorias</option>
+          </select>
         </div>
 
         <div class="catalog-toolbar">
@@ -328,14 +338,20 @@
         <span class="eyebrow">PAGAMENTO CONFIRMADO</span>
         <h2>Seu eBook está liberado!</h2>
         <p id="success-product-name">Obrigado pela compra.</p>
-        <a id="download-button" class="btn btn-large full" href="#" target="_blank" rel="noopener">Baixar meu eBook</a>
-        <small>O link é temporário. Se precisar depois, clique novamente em “Baixar meu eBook” no catálogo.</small>
+        <a id="download-button" class="btn btn-large full mobile-download-button" href="#">Baixar meu eBook</a>
+        <small class="download-mobile-help">No celular, toque em “Baixar meu eBook”. O arquivo será enviado para os downloads do aparelho. O link é temporário.</small>
       </div>
     </div>
   </div>
 
+  <nav class="mobile-bottom-nav" aria-label="Navegação do celular">
+    <a href="#inicio"><span class="mobile-nav-icon">⌂</span><small>Início</small></a>
+    <a href="#catalogo"><span class="mobile-nav-icon">▦</span><small>eBooks</small></a>
+    <button type="button" id="mobile-library-button"><span class="mobile-nav-icon">▣</span><small>Biblioteca</small></button>
+  </nav>
+
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js?v=202610181358"></script>
-  <script src="app.js?v=202610181535"></script>
+  <script src="app.js?v=202610181600"></script>
 </body>
 </html>
