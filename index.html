@@ -27,7 +27,7 @@
       <a href="#pagamento">Pagamento</a>
       <a href="#como-funciona">Como funciona</a>
     </nav>
-    <a class="btn btn-small btn-ghost" href="profile.html">Meu perfil</a>
+    <button class="btn btn-small btn-ghost" id="account-button" type="button">Entrar</button>
   </header>
 
   <main>
@@ -188,6 +188,50 @@
         <small class="privacy-note">O download só é liberado depois da confirmação oficial do pagamento.</small>
       </div>
 
+
+      <div id="auth-view" class="hidden">
+        <span class="eyebrow">CONTA H EBOOKS</span>
+        <h2 id="auth-title">Crie sua conta para liberar o eBook</h2>
+        <p class="modal-subtitle" id="auth-context">O pagamento foi confirmado. Crie sua conta usando o mesmo e-mail informado na compra.</p>
+
+        <div class="auth-tabs">
+          <button type="button" class="auth-tab active" id="auth-tab-register">Criar conta</button>
+          <button type="button" class="auth-tab" id="auth-tab-login">Entrar</button>
+        </div>
+
+        <form id="register-form" class="checkout-form">
+          <label>E-mail<input id="register-email" type="email" autocomplete="email" required placeholder="voce@email.com" /></label>
+          <label>Crie uma senha<input id="register-password" type="password" autocomplete="new-password" minlength="8" required placeholder="Mínimo de 8 caracteres" /></label>
+          <button class="btn btn-large full" id="register-button" type="submit">Criar conta e liberar eBook</button>
+        </form>
+
+        <form id="login-form" class="checkout-form hidden">
+          <label>E-mail<input id="login-email" type="email" autocomplete="email" required placeholder="voce@email.com" /></label>
+          <label>Senha<input id="login-password" type="password" autocomplete="current-password" minlength="8" required placeholder="Sua senha" /></label>
+          <button class="btn btn-large full" id="login-button" type="submit">Entrar na minha conta</button>
+        </form>
+
+        <div class="auth-divider"><span>ou</span></div>
+        <button class="provider-button github" id="github-login-button" type="button" disabled>
+          <span class="provider-icon">GH</span>
+          <span>Continuar com GitHub</span>
+        </button>
+        <small id="github-note" class="privacy-note">GitHub será habilitado assim que o provedor OAuth for configurado.</small>
+        <p class="form-message" id="auth-message" role="status"></p>
+      </div>
+
+      <div id="account-view" class="hidden">
+        <span class="eyebrow">MINHA CONTA</span>
+        <div class="account-modal-head">
+          <div>
+            <h2>Minha biblioteca</h2>
+            <p class="modal-subtitle" id="account-email"></p>
+          </div>
+          <button class="btn btn-small btn-ghost" id="logout-button" type="button">Sair</button>
+        </div>
+        <div id="account-library" class="account-library"></div>
+      </div>
+
       <div id="success-view" class="hidden success-view">
         <div class="success-icon">✓</div>
         <span class="eyebrow">PAGAMENTO CONFIRMADO</span>
@@ -199,6 +243,7 @@
     </div>
   </div>
 
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js"></script>
   <script src="app.js"></script>
 </body>
