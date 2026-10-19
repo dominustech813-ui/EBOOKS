@@ -1023,13 +1023,20 @@
       const data = await discordRoleApi("status");
       discordRoles = Array.isArray(data.roles) ? data.roles : [];
 
-      if (data.linked) {
+      if (!data.oauthConfigured) {
+        discordLinkStatus.textContent = "Integração Discord aguardando configuração segura";
+        discordLinkButton.classList.remove("linked");
+        discordLinkButton.disabled = true;
+        discordLinkButton.querySelector("span").textContent = "Configuração pendente";
+      } else if (data.linked) {
         discordLinkStatus.textContent = "Vinculado como " + (data.discord?.username || "Discord");
         discordLinkButton.classList.add("linked");
+        discordLinkButton.disabled = true;
         discordLinkButton.querySelector("span").textContent = "Discord vinculado ✓";
       } else {
         discordLinkStatus.textContent = "Discord ainda não vinculado";
         discordLinkButton.classList.remove("linked");
+        discordLinkButton.disabled = false;
         discordLinkButton.querySelector("span").textContent = "Vincular Discord";
       }
 
@@ -1038,8 +1045,15 @@
         const buyButton = document.querySelector('[data-discord-role-buy="' + CSS.escape(role.id) + '"]');
         if (priceEl) priceEl.textContent = role.price ? money.format(Number(role.price)) : "Preço a definir";
         if (buyButton) {
-          buyButton.disabled = !role.configured;
-          buyButton.textContent = role.configured ? "Comprar cargo" : "Configuração pendente";
+          const canBuy = role.configured && data.oauthConfigured && data.linked;
+          buyButton.disabled = !canBuy;
+          buyButton.textContent = !role.configured
+            ? "Configuração pendente"
+            : !data.oauthConfigured
+              ? "Integração pendente"
+              : !data.linked
+                ? "Vincule o Discord primeiro"
+                : "Comprar cargo";
         }
       });
     } catch (error) {
