@@ -17,6 +17,23 @@
   const mobileCatalogSearch = document.getElementById("mobile-catalog-search");
   const mobileCatalogCategory = document.getElementById("mobile-catalog-category");
   const mobileLibraryButton = document.getElementById("mobile-library-button");
+  const discordLinkButton = document.getElementById("discord-link-button");
+  const discordLinkStatus = document.getElementById("discord-link-status");
+  const discordRoleModal = document.getElementById("discord-role-modal");
+  const discordRoleCheckoutName = document.getElementById("discord-role-checkout-name");
+  const discordRoleCheckoutPrice = document.getElementById("discord-role-checkout-price");
+  const discordRoleMethodPix = document.getElementById("discord-role-method-pix");
+  const discordRoleMethodCard = document.getElementById("discord-role-method-card");
+  const discordRolePixPanel = document.getElementById("discord-role-pix-panel");
+  const discordRoleCardPanel = document.getElementById("discord-role-card-panel");
+  const discordRolePixButton = document.getElementById("discord-role-pix-button");
+  const discordRoleCardButton = document.getElementById("discord-role-card-button");
+  const discordRolePixArea = document.getElementById("discord-role-pix-area");
+  const discordRolePixImage = document.getElementById("discord-role-pix-image");
+  const discordRolePixCode = document.getElementById("discord-role-pix-code");
+  const discordRoleCopyPix = document.getElementById("discord-role-copy-pix");
+  const discordRoleCheckStatus = document.getElementById("discord-role-check-status");
+  const discordRolePaymentStatus = document.getElementById("discord-role-payment-status");
 
   const checkoutCover = document.getElementById("checkout-cover");
   const checkoutCoverTitle = document.getElementById("checkout-cover-title");
@@ -97,6 +114,10 @@
   let pendingClaimMethod = "";
   let pendingBuyerEmail = "";
   let appInitialized = false;
+  let discordRoles = [];
+  let selectedDiscordRole = null;
+  let discordRoleCheckoutToken = "";
+  let discordRolePollTimer = null;
 
   const categoryIcons = {
     "Saúde": "🏃",
@@ -356,6 +377,23 @@
       error.status = response.status;
       throw error;
     }
+    return data;
+  }
+
+  async function discordRoleApi(action, extra = {}) {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session?.access_token) throw new Error("Entre na sua conta do H ebooks para continuar.");
+    const response = await fetch(config.discordRoleApiUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + session.access_token,
+        apikey: config.supabasePublishableKey
+      },
+      body: JSON.stringify({ action, ...extra })
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(data.error || "Não foi possível acessar a Loja Discord.");
     return data;
   }
 
@@ -951,6 +989,230 @@
     }
   });
 
+  function selectDiscordRoleMethod(method) {
+    const card = method === "card";
+    discordRoleMethodPix.classList.toggle("active", !card);
+    discordRoleMethodCard.classList.toggle("active", card);
+    discordRolePixPanel.classList.toggle("hidden", card);
+    discordRoleCardPanel.classList.toggle("hidden", !card);
+  }
+
+  function closeDiscordRoleModal() {
+    clearTimeout(discordRolePollTimer);
+    discordRoleModal.classList.remove("active");
+    discordRoleModal.setAttribute("aria-hidden", "true");
+    document.body.style.overflow = "";
+  }
+
+  function openDiscordRoleModal(role) {
+    selectedDiscordRole = role;
+    discordRoleCheckoutName.textContent = role.role_name;
+    discordRoleCheckoutPrice.textContent = money.format(Number(role.price));
+    discordRolePixArea.classList.add("hidden");
+    discordRolePaymentStatus.textContent = "";
+    discordRoleCheckoutToken = "";
+    selectDiscordRoleMethod("pix");
+    discordRoleModal.classList.add("active");
+    discordRoleModal.setAttribute("aria-hidden", "false");
+    document.body.style.overflow = "hidden";
+  }
+
+  async function loadDiscordStore() {
+    if (!config.discordRoleApiUrl || !discordLinkButton) return;
+    try {
+      const data = await discordRoleApi("status");
+      discordRoles = Array.isArray(data.roles) ? data.roles : [];
+
+      if (data.linked) {
+        discordLinkStatus.textContent = "Vinculado como " + (data.discord?.username || "Discord");
+        discordLinkButton.classList.add("linked");
+        discordLinkButton.querySelector("span").textContent = "Discord vinculado ✓";
+      } else {
+        discordLinkStatus.textContent = "Discord ainda não vinculado";
+        discordLinkButton.classList.remove("linked");
+        discordLinkButton.querySelector("span").textContent = "Vincular Discord";
+      }
+
+      discordRoles.forEach(role => {
+        const priceEl = document.querySelector('[data-role-price="' + CSS.escape(role.id) + '"]');
+        const buyButton = document.querySelector('[data-discord-role-buy="' + CSS.escape(role.id) + '"]');
+        if (priceEl) priceEl.textContent = role.price ? money.format(Number(role.price)) : "Preço a definir";
+        if (buyButton) {
+          buyButton.disabled = !role.configured;
+          buyButton.textContent = role.configured ? "Comprar cargo" : "Configuração pendente";
+        }
+      });
+    } catch (error) {
+      discordLinkStatus.textContent = "Loja Discord temporariamente indisponível";
+    }
+  }
+
+  async function checkDiscordRolePayment(manual = false) {
+    if (!discordRoleCheckoutToken) return;
+    if (manual) {
+      discordRoleCheckStatus.disabled = true;
+      discordRoleCheckStatus.textContent = "Verificando...";
+    }
+    try {
+      const data = await discordRoleApi("payment_status", { checkoutToken: discordRoleCheckoutToken });
+      if (data.approved && data.roleGranted) {
+        clearTimeout(discordRolePollTimer);
+        discordRolePaymentStatus.textContent = "Pagamento confirmado. Cargo adicionado ao seu Discord ✓";
+        discordRolePaymentStatus.classList.remove("error");
+        discordRoleCheckStatus.textContent = "Cargo liberado ✓";
+        discordRoleCheckStatus.disabled = true;
+        return;
+      }
+      if (data.approved && data.error) {
+        clearTimeout(discordRolePollTimer);
+        discordRolePaymentStatus.textContent = data.error;
+        discordRolePaymentStatus.classList.add("error");
+        return;
+      }
+      discordRolePaymentStatus.textContent = "Pagamento ainda não confirmado.";
+      if (!manual) discordRolePollTimer = setTimeout(() => checkDiscordRolePayment(false), 4500);
+    } catch (error) {
+      discordRolePaymentStatus.textContent = error.message || "Não foi possível consultar o pagamento.";
+      discordRolePaymentStatus.classList.add("error");
+    } finally {
+      if (manual && !discordRoleCheckStatus.disabled) {
+        discordRoleCheckStatus.disabled = false;
+        discordRoleCheckStatus.textContent = "Já paguei • verificar cargo";
+      }
+    }
+  }
+
+  if (discordLinkButton) {
+    discordLinkButton.addEventListener("click", async () => {
+      discordLinkButton.disabled = true;
+      try {
+        const data = await discordRoleApi("link");
+        if (!data.url) throw new Error("Não foi possível iniciar a vinculação.");
+        window.location.href = data.url;
+      } catch (error) {
+        alert(error.message || "Não foi possível vincular o Discord.");
+        discordLinkButton.disabled = false;
+      }
+    });
+  }
+
+  document.querySelectorAll("[data-discord-role-buy]").forEach(button => {
+    button.addEventListener("click", () => {
+      const role = discordRoles.find(r => r.id === button.dataset.discordRoleBuy);
+      if (!role) return;
+      if (!role.configured) {
+        alert("Este cargo ainda não está configurado para venda.");
+        return;
+      }
+      if (!discordLinkButton.classList.contains("linked")) {
+        alert("Vincule sua conta do Discord antes de comprar o cargo.");
+        return;
+      }
+      openDiscordRoleModal(role);
+    });
+  });
+
+  document.querySelectorAll("[data-close-discord-role]").forEach(el => {
+    el.addEventListener("click", closeDiscordRoleModal);
+  });
+
+  if (discordRoleMethodPix) discordRoleMethodPix.addEventListener("click", () => selectDiscordRoleMethod("pix"));
+  if (discordRoleMethodCard) discordRoleMethodCard.addEventListener("click", () => selectDiscordRoleMethod("card"));
+
+  if (discordRolePixButton) {
+    discordRolePixButton.addEventListener("click", async () => {
+      if (!selectedDiscordRole) return;
+      discordRolePixButton.disabled = true;
+      discordRolePaymentStatus.textContent = "Gerando Pix...";
+      try {
+        const data = await discordRoleApi("create_pix", { roleId: selectedDiscordRole.id });
+        discordRoleCheckoutToken = data.checkoutToken || "";
+        discordRolePixCode.value = data.qrCode || "";
+        discordRolePixImage.src = data.qrCodeBase64 ? "data:image/png;base64," + data.qrCodeBase64 : "";
+        discordRolePixArea.classList.remove("hidden");
+        discordRolePaymentStatus.textContent = "Pix gerado. Aguardando a confirmação do pagamento...";
+        clearTimeout(discordRolePollTimer);
+        discordRolePollTimer = setTimeout(() => checkDiscordRolePayment(false), 4000);
+      } catch (error) {
+        discordRolePaymentStatus.textContent = error.message || "Não foi possível gerar o Pix.";
+        discordRolePaymentStatus.classList.add("error");
+      } finally {
+        discordRolePixButton.disabled = false;
+      }
+    });
+  }
+
+  if (discordRoleCopyPix) {
+    discordRoleCopyPix.addEventListener("click", async () => {
+      if (!discordRolePixCode.value) return;
+      try {
+        await navigator.clipboard.writeText(discordRolePixCode.value);
+        discordRoleCopyPix.textContent = "Código copiado ✓";
+        setTimeout(() => discordRoleCopyPix.textContent = "Copiar código Pix", 1500);
+      } catch {
+        discordRolePixCode.select();
+        document.execCommand("copy");
+      }
+    });
+  }
+
+  if (discordRoleCheckStatus) discordRoleCheckStatus.addEventListener("click", () => checkDiscordRolePayment(true));
+
+  if (discordRoleCardButton) {
+    discordRoleCardButton.addEventListener("click", async () => {
+      if (!selectedDiscordRole) return;
+      discordRoleCardButton.disabled = true;
+      discordRolePaymentStatus.textContent = "Abrindo Mercado Pago...";
+      try {
+        const data = await discordRoleApi("create_card", { roleId: selectedDiscordRole.id });
+        if (!data.checkoutUrl) throw new Error("O Mercado Pago não retornou o checkout.");
+        window.location.href = data.checkoutUrl;
+      } catch (error) {
+        discordRolePaymentStatus.textContent = error.message || "Não foi possível abrir o pagamento.";
+        discordRolePaymentStatus.classList.add("error");
+        discordRoleCardButton.disabled = false;
+      }
+    });
+  }
+
+  async function handleDiscordReturn() {
+    const params = new URLSearchParams(window.location.search);
+    const linkResult = params.get("discord_link");
+    const roleReturn = params.get("discord_role_return");
+
+    if (linkResult) {
+      await loadDiscordStore();
+      if (linkResult === "ok") {
+        setTimeout(() => {
+          const el = document.getElementById("discord");
+          if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
+        }, 100);
+      }
+    }
+
+    if (roleReturn) {
+      discordRoleCheckoutToken = roleReturn;
+      for (let i = 0; i < 12; i++) {
+        try {
+          const data = await discordRoleApi("payment_status", { checkoutToken: roleReturn });
+          if (data.approved && data.roleGranted) {
+            alert("Pagamento confirmado! O cargo já foi adicionado ao seu Discord.");
+            break;
+          }
+          if (data.approved && data.error) {
+            alert(data.error);
+            break;
+          }
+        } catch {}
+        await new Promise(resolve => setTimeout(resolve, 2500));
+      }
+    }
+
+    if (linkResult || roleReturn) {
+      history.replaceState({}, document.title, window.location.pathname + "#discord");
+    }
+  }
+
   async function refreshPaymentConfig() {
     try {
       const data = await checkoutApi({ action: "config" });
@@ -981,6 +1243,8 @@
     }
 
     await unlockSite(session);
+    await loadDiscordStore();
+    await handleDiscordReturn();
 
     const storedClaim = readStorage("hebooks:pending-claim");
     if (storedClaim?.checkoutToken) {
