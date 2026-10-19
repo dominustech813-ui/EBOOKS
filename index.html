@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=202610191750" />
+  <link rel="stylesheet" href="styles.css?v=202610191805" />
 
   <style id="auth-critical">
     body.auth-locked{margin:0;overflow:hidden;background:#f7f6fc}
@@ -294,6 +294,99 @@
 
               <p class="discord-auto-note">⚡ Depois da confirmação do pagamento, o H ebooks entrega o cargo automaticamente à conta do Discord vinculada.</p>
             </div>
+
+            <div class="discord-extra-programs">
+              <article class="discord-boost-card">
+                <div class="discord-program-icon">🚀</div>
+                <div class="discord-program-copy">
+                  <span class="discord-kicker">IMPULSIONE O SERVIDOR</span>
+                  <h3>Impulsione o H ebooks e ganhe um cargo personalizado.</h3>
+                  <p>Depois que o impulso for confirmado no servidor, fale com o dono para definir seu cargo personalizado, com nome e cor dentro das regras da comunidade.</p>
+                  <div class="discord-program-benefits">
+                    <span>✨ Cargo personalizado</span>
+                    <span>🎨 Nome e cor especiais</span>
+                    <span>⭐ Destaque na comunidade</span>
+                  </div>
+                </div>
+                <a class="discord-program-button boost" href="https://discord.gg/ABpuWgH2j" target="_blank" rel="noopener noreferrer">
+                  Abrir Discord e impulsionar
+                </a>
+              </article>
+
+              <article class="discord-support-program">
+                <div class="discord-support-head">
+                  <div>
+                    <span class="discord-kicker">EQUIPE DE SUPORTE</span>
+                    <h3>Deseja trabalhar com a gente com suporte?</h3>
+                    <p>Não precisa saber muita coisa para começar. Você recebe treinamento especializado com a equipe de suporte do H ebooks.</p>
+                  </div>
+                  <div class="discord-support-price">
+                    <small>Investimento de entrada</small>
+                    <strong>R$ 30,00</strong>
+                    <span>via PIX</span>
+                  </div>
+                </div>
+
+                <div class="discord-support-grid">
+                  <div class="discord-support-box">
+                    <span class="discord-support-label">REQUISITOS</span>
+                    <ul>
+                      <li><strong>R$ 30,00</strong> de investimento de entrada.</li>
+                      <li>Conta H ebooks e Discord vinculados.</li>
+                      <li>Participar do treino especializado com a equipe.</li>
+                      <li>Ter disponibilidade para ajudar os membros da comunidade.</li>
+                    </ul>
+                  </div>
+
+                  <div class="discord-support-box premium">
+                    <span class="discord-support-label">BENEFÍCIOS</span>
+                    <ul>
+                      <li>Cargo exclusivo <strong>Suporte H ebooks</strong> no Discord.</li>
+                      <li>Treinamento especializado com a equipe de suporte.</li>
+                      <li>Benefícios premium dentro da comunidade.</li>
+                      <li>Identificação especial como membro do suporte.</li>
+                    </ul>
+                  </div>
+                </div>
+
+                <div class="discord-referral-reward">
+                  <span class="discord-reward-badge">R$ 20</span>
+                  <div>
+                    <strong>Bônus por indicação</strong>
+                    <p>Se <strong>10 amigos seus comprarem</strong> no H ebooks e as provas das compras forem mostradas ao dono do servidor, você ganha <strong>R$ 20,00</strong> após a conferência.</p>
+                  </div>
+                </div>
+
+                <div class="discord-support-payment">
+                  <div class="discord-support-payment-copy">
+                    <strong id="support-team-status">Vincule seu Discord para participar.</strong>
+                    <small>Após a aprovação do PIX, o cargo Suporte H ebooks é entregue automaticamente no Discord vinculado.</small>
+                  </div>
+                  <button class="discord-program-button support" id="support-team-pix-button" type="button" disabled>
+                    GERAR PIX • R$ 30,00
+                  </button>
+                </div>
+
+                <div id="support-team-pix-area" class="discord-support-pix-area hidden">
+                  <div class="discord-support-qr">
+                    <img id="support-team-pix-image" alt="QR Code PIX para entrar na equipe de suporte">
+                  </div>
+                  <div class="discord-support-pix-copy">
+                    <label>PIX Copia e Cola
+                      <input id="support-team-pix-code" readonly>
+                    </label>
+                    <div class="discord-support-pix-actions">
+                      <button type="button" id="support-team-copy-pix">Copiar PIX</button>
+                      <button type="button" id="support-team-check-status">Já paguei • verificar</button>
+                    </div>
+                    <p id="support-team-payment-status" class="discord-support-payment-status" role="status"></p>
+                  </div>
+                </div>
+
+                <p class="discord-support-disclaimer">Programa de colaboração da comunidade H ebooks. A participação não cria vínculo empregatício. O bônus de indicação depende da conferência das 10 compras pelo dono do servidor.</p>
+              </article>
+            </div>
+
           </div>
         </div>
       </div>
@@ -598,6 +691,6 @@
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js?v=202610191445"></script>
-  <script src="app.js?v=202610191750"></script>
+  <script src="app.js?v=202610191805"></script>
 </body>
 </html>
