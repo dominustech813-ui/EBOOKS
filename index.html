@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=202610182035" />
+  <link rel="stylesheet" href="styles.css?v=202610191402" />
 
   <style id="auth-critical">
     body.auth-locked{margin:0;overflow:hidden;background:#f7f6fc}
@@ -121,6 +121,7 @@
     <a class="brand" href="#inicio" aria-label="H ebooks"><span class="brand-mark">H</span><span>ebooks</span></a>
     <nav>
       <a href="#catalogo">Catálogo</a>
+      <a href="#discord">Loja Discord</a>
       <a href="#pagamento">Pagamento</a>
       <a href="#como-funciona">Como funciona</a>
     </nav>
@@ -179,6 +180,51 @@
         </div>
 
         <div id="ebook-grid" class="ebook-grid" aria-live="polite"></div>
+      </div>
+    </section>
+
+
+    <section id="discord" class="section discord-store-section">
+      <div class="container">
+        <div class="discord-store-shell">
+          <aside class="discord-servers" aria-hidden="true">
+            <div class="discord-home-mark">H</div>
+            <span class="discord-server-dot"></span>
+            <span class="discord-server-dot"></span>
+            <span class="discord-server-dot"></span>
+          </aside>
+
+          <div class="discord-channel-panel" aria-hidden="true">
+            <strong>H EBOOKS</strong>
+            <small>LOJA & COMUNIDADE</small>
+            <div class="discord-channel active">#・boas-vindas</div>
+            <div class="discord-channel">#・novidades</div>
+            <div class="discord-channel">#・ebooks</div>
+            <div class="discord-channel">#・promoções</div>
+            <div class="discord-channel">#・suporte</div>
+          </div>
+
+          <div class="discord-store-content">
+            <span class="discord-kicker">LOJA DISCORD</span>
+            <h2>Entre para o Discord do H ebooks.</h2>
+            <p>Participe da comunidade para acompanhar novidades, lançamentos de eBooks, promoções e conversar com outros membros.</p>
+
+            <div class="discord-feature-grid">
+              <div><span>📚</span><strong>Novos eBooks</strong><small>Acompanhe os lançamentos.</small></div>
+              <div><span>🎁</span><strong>Promoções</strong><small>Veja avisos e novidades.</small></div>
+              <div><span>💬</span><strong>Comunidade</strong><small>Converse com outros leitores.</small></div>
+            </div>
+
+            <a class="discord-join-button" href="https://discord.gg/ABpuWgH2j" target="_blank" rel="noopener noreferrer">
+              <svg class="discord-icon" viewBox="0 0 64 48" aria-hidden="true">
+                <path d="M52 5.5A43 43 0 0 0 41.5 2l-1.3 2.6A39 39 0 0 0 32 3.5a39 39 0 0 0-8.2 1.1L22.5 2A43 43 0 0 0 12 5.5C5.4 15.3 3.6 24.8 4.5 34.2A43 43 0 0 0 17.4 41l3.1-4.2a27 27 0 0 1-4.9-2.4l1.2-.9c9.5 4.4 19.8 4.4 30.2 0l1.3.9a30 30 0 0 1-5 2.4l3.1 4.2a43 43 0 0 0 12.9-6.8C60.5 23.3 57.3 13.9 52 5.5ZM23.5 29c-3 0-5.5-2.8-5.5-6.2s2.4-6.2 5.5-6.2c3.1 0 5.6 2.8 5.5 6.2 0 3.4-2.4 6.2-5.5 6.2Zm17 0c-3 0-5.5-2.8-5.5-6.2s2.4-6.2 5.5-6.2c3.1 0 5.6 2.8 5.5 6.2 0 3.4-2.4 6.2-5.5 6.2Z" fill="currentColor"/>
+              </svg>
+              <span>Entrar no servidor no Discord</span>
+            </a>
+
+            <small class="discord-invite-url">discord.gg/ABpuWgH2j</small>
+          </div>
+        </div>
       </div>
     </section>
 
@@ -353,6 +399,7 @@
   <nav class="mobile-bottom-nav" aria-label="Navegação do celular">
     <a href="#inicio"><span class="mobile-nav-icon">⌂</span><small>Início</small></a>
     <a href="#catalogo"><span class="mobile-nav-icon">▦</span><small>eBooks</small></a>
+    <a href="#discord" class="mobile-discord-link"><span class="mobile-nav-icon">◉</span><small>Discord</small></a>
     <button type="button" id="mobile-library-button"><span class="mobile-nav-icon">▣</span><small>Biblioteca</small></button>
   </nav>
 
