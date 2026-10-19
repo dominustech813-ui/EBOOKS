@@ -1055,6 +1055,13 @@
             : (role.price ? money.format(Number(role.price)) : "Preço a definir");
         }
         if (buyButton) {
+          if (role.owned) {
+            buyButton.disabled = true;
+            buyButton.classList.add("role-delivered");
+            buyButton.textContent = "CARGO ENTREGUE ✓";
+            return;
+          }
+          buyButton.classList.remove("role-delivered");
           if (discordRoleTestMode) {
             const canTest = role.configured && data.oauthConfigured && data.linked && discordRoleTestAllowed;
             buyButton.disabled = !canTest;
