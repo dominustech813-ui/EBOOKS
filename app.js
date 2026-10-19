@@ -34,6 +34,14 @@
   const discordRoleCopyPix = document.getElementById("discord-role-copy-pix");
   const discordRoleCheckStatus = document.getElementById("discord-role-check-status");
   const discordRolePaymentStatus = document.getElementById("discord-role-payment-status");
+  const supportTeamStatus = document.getElementById("support-team-status");
+  const supportTeamPixButton = document.getElementById("support-team-pix-button");
+  const supportTeamPixArea = document.getElementById("support-team-pix-area");
+  const supportTeamPixImage = document.getElementById("support-team-pix-image");
+  const supportTeamPixCode = document.getElementById("support-team-pix-code");
+  const supportTeamCopyPix = document.getElementById("support-team-copy-pix");
+  const supportTeamCheckStatus = document.getElementById("support-team-check-status");
+  const supportTeamPaymentStatus = document.getElementById("support-team-payment-status");
 
   const checkoutCover = document.getElementById("checkout-cover");
   const checkoutCoverTitle = document.getElementById("checkout-cover-title");
@@ -120,6 +128,8 @@
   let discordRolePollTimer = null;
   let discordRoleTestMode = false;
   let discordRoleTestAllowed = false;
+  let supportTeamCheckoutToken = "";
+  let supportTeamPollTimer = null;
 
   const categoryIcons = {
     "Saúde": "🏃",
@@ -1269,8 +1279,34 @@
           }
         }
       });
+
+      const supportRole = discordRoles.find(role => role.id === "support-team");
+      if (supportTeamPixButton && supportTeamStatus) {
+        if (!supportRole || !supportRole.configured) {
+          supportTeamPixButton.disabled = true;
+          supportTeamPixButton.textContent = "CONFIGURAÇÃO PENDENTE";
+          supportTeamStatus.textContent = "Programa de suporte aguardando configuração.";
+        } else if (supportRole.owned) {
+          supportTeamPixButton.disabled = true;
+          supportTeamPixButton.textContent = "CARGO DE SUPORTE ENTREGUE ✓";
+          supportTeamStatus.textContent = "Você já faz parte da equipe de suporte ✓";
+        } else if (!data.oauthConfigured) {
+          supportTeamPixButton.disabled = true;
+          supportTeamPixButton.textContent = "INTEGRAÇÃO PENDENTE";
+          supportTeamStatus.textContent = "Integração com Discord indisponível.";
+        } else if (!data.linked) {
+          supportTeamPixButton.disabled = true;
+          supportTeamPixButton.textContent = "VINCULE O DISCORD PRIMEIRO";
+          supportTeamStatus.textContent = "Vincule seu Discord acima para participar.";
+        } else {
+          supportTeamPixButton.disabled = false;
+          supportTeamPixButton.textContent = "GERAR PIX • " + money.format(Number(supportRole.price || 30));
+          supportTeamStatus.textContent = "Discord vinculado. Você já pode gerar o PIX.";
+        }
+      }
     } catch (error) {
       discordLinkStatus.textContent = "Loja Discord temporariamente indisponível";
+      if (supportTeamStatus) supportTeamStatus.textContent = "Programa de suporte temporariamente indisponível.";
     }
   }
 
@@ -1307,6 +1343,123 @@
         discordRoleCheckStatus.textContent = "Já paguei • verificar cargo";
       }
     }
+  }
+
+
+  async function checkSupportTeamPayment(manual = false) {
+    if (!supportTeamCheckoutToken) return;
+    if (manual && supportTeamCheckStatus) {
+      supportTeamCheckStatus.disabled = true;
+      supportTeamCheckStatus.textContent = "Verificando...";
+    }
+    try {
+      const data = await discordRoleApi("payment_status", { checkoutToken: supportTeamCheckoutToken });
+      if (data.approved && data.roleGranted) {
+        clearTimeout(supportTeamPollTimer);
+        if (supportTeamPaymentStatus) {
+          supportTeamPaymentStatus.textContent = "Pagamento confirmado. Cargo Suporte H ebooks entregue no Discord ✓";
+          supportTeamPaymentStatus.classList.remove("error");
+        }
+        if (supportTeamPixButton) {
+          supportTeamPixButton.disabled = true;
+          supportTeamPixButton.textContent = "CARGO DE SUPORTE ENTREGUE ✓";
+        }
+        if (supportTeamStatus) supportTeamStatus.textContent = "Você já faz parte da equipe de suporte ✓";
+        if (supportTeamCheckStatus) {
+          supportTeamCheckStatus.disabled = true;
+          supportTeamCheckStatus.textContent = "Cargo entregue ✓";
+        }
+        await loadDiscordStore();
+        return;
+      }
+      if (data.approved && data.error) {
+        clearTimeout(supportTeamPollTimer);
+        if (supportTeamPaymentStatus) {
+          supportTeamPaymentStatus.textContent = data.error;
+          supportTeamPaymentStatus.classList.add("error");
+        }
+        return;
+      }
+      if (supportTeamPaymentStatus) {
+        supportTeamPaymentStatus.textContent = "Pagamento ainda não confirmado.";
+        supportTeamPaymentStatus.classList.remove("error");
+      }
+      if (!manual) supportTeamPollTimer = setTimeout(() => checkSupportTeamPayment(false), 4500);
+    } catch (error) {
+      if (supportTeamPaymentStatus) {
+        supportTeamPaymentStatus.textContent = error.message || "Não foi possível consultar o pagamento.";
+        supportTeamPaymentStatus.classList.add("error");
+      }
+    } finally {
+      if (manual && supportTeamCheckStatus && supportTeamCheckStatus.textContent !== "Cargo entregue ✓") {
+        supportTeamCheckStatus.disabled = false;
+        supportTeamCheckStatus.textContent = "Já paguei • verificar";
+      }
+    }
+  }
+
+  if (supportTeamPixButton) {
+    supportTeamPixButton.addEventListener("click", async () => {
+      const supportRole = discordRoles.find(role => role.id === "support-team");
+      if (!supportRole) {
+        alert("O programa de suporte ainda não está disponível.");
+        return;
+      }
+      if (supportRole.owned) {
+        alert("O cargo Suporte H ebooks já foi entregue à sua conta.");
+        return;
+      }
+      if (!discordLinkButton || discordLinkButton.dataset.linked !== "true") {
+        alert("Vincule sua conta do Discord antes de gerar o PIX.");
+        return;
+      }
+
+      supportTeamPixButton.disabled = true;
+      supportTeamPixButton.textContent = "GERANDO PIX...";
+      if (supportTeamPaymentStatus) supportTeamPaymentStatus.textContent = "";
+
+      try {
+        const data = await discordRoleApi("create_pix", { roleId: "support-team" });
+        supportTeamCheckoutToken = data.checkoutToken || "";
+        if (!supportTeamCheckoutToken || !data.qrCode) throw new Error("O PIX não foi gerado corretamente.");
+
+        if (supportTeamPixCode) supportTeamPixCode.value = data.qrCode;
+        if (supportTeamPixImage) {
+          supportTeamPixImage.src = data.qrCodeBase64
+            ? "data:image/png;base64," + data.qrCodeBase64
+            : "";
+        }
+        if (supportTeamPixArea) supportTeamPixArea.classList.remove("hidden");
+        supportTeamPixButton.textContent = "PIX GERADO • R$ 30,00";
+        if (supportTeamPaymentStatus) supportTeamPaymentStatus.textContent = "PIX gerado. Aguardando confirmação do pagamento...";
+        clearTimeout(supportTeamPollTimer);
+        supportTeamPollTimer = setTimeout(() => checkSupportTeamPayment(false), 4500);
+      } catch (error) {
+        alert(error.message || "Não foi possível gerar o PIX.");
+        supportTeamPixButton.disabled = false;
+        supportTeamPixButton.textContent = "GERAR PIX • R$ 30,00";
+      }
+    });
+  }
+
+  if (supportTeamCopyPix) {
+    supportTeamCopyPix.addEventListener("click", async () => {
+      const code = String(supportTeamPixCode?.value || "").trim();
+      if (!code) return;
+      try {
+        await navigator.clipboard.writeText(code);
+        const old = supportTeamCopyPix.textContent;
+        supportTeamCopyPix.textContent = "PIX COPIADO ✓";
+        setTimeout(() => { supportTeamCopyPix.textContent = old; }, 1800);
+      } catch {
+        supportTeamPixCode?.select();
+        document.execCommand("copy");
+      }
+    });
+  }
+
+  if (supportTeamCheckStatus) {
+    supportTeamCheckStatus.addEventListener("click", () => checkSupportTeamPayment(true));
   }
 
   if (discordLinkButton) {
