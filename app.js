@@ -118,6 +118,8 @@
   let selectedDiscordRole = null;
   let discordRoleCheckoutToken = "";
   let discordRolePollTimer = null;
+  let discordRoleTestMode = false;
+  let discordRoleTestAllowed = false;
 
   const categoryIcons = {
     "Saúde": "🏃",
@@ -1022,6 +1024,8 @@
     try {
       const data = await discordRoleApi("status");
       discordRoles = Array.isArray(data.roles) ? data.roles : [];
+      discordRoleTestMode = data.testMode === true;
+      discordRoleTestAllowed = data.testAllowed === true;
 
       if (!data.oauthConfigured) {
         discordLinkStatus.textContent = "Integração Discord aguardando configuração segura";
@@ -1045,17 +1049,35 @@
       discordRoles.forEach(role => {
         const priceEl = document.querySelector('[data-role-price="' + CSS.escape(role.id) + '"]');
         const buyButton = document.querySelector('[data-discord-role-buy="' + CSS.escape(role.id) + '"]');
-        if (priceEl) priceEl.textContent = role.price ? money.format(Number(role.price)) : "Preço a definir";
+        if (priceEl) {
+          priceEl.textContent = discordRoleTestMode
+            ? "TESTE TEMPORÁRIO • SEM COBRANÇA"
+            : (role.price ? money.format(Number(role.price)) : "Preço a definir");
+        }
         if (buyButton) {
-          const canBuy = role.configured && data.oauthConfigured && data.linked;
-          buyButton.disabled = !canBuy;
-          buyButton.textContent = !role.configured
-            ? "Configuração pendente"
-            : !data.oauthConfigured
-              ? "Integração pendente"
-              : !data.linked
-                ? "Vincule o Discord primeiro"
-                : "Comprar cargo";
+          if (discordRoleTestMode) {
+            const canTest = role.configured && data.oauthConfigured && data.linked && discordRoleTestAllowed;
+            buyButton.disabled = !canTest;
+            buyButton.textContent = !role.configured
+              ? "Configuração pendente"
+              : !data.oauthConfigured
+                ? "Integração pendente"
+                : !data.linked
+                  ? "Vincule o Discord primeiro"
+                  : !discordRoleTestAllowed
+                    ? "Teste reservado à administração"
+                    : "PEGAR CARGO";
+          } else {
+            const canBuy = role.configured && data.oauthConfigured && data.linked;
+            buyButton.disabled = !canBuy;
+            buyButton.textContent = !role.configured
+              ? "Configuração pendente"
+              : !data.oauthConfigured
+                ? "Integração pendente"
+                : !data.linked
+                  ? "Vincule o Discord primeiro"
+                  : "Comprar cargo";
+          }
         }
       });
     } catch (error) {
@@ -1134,17 +1156,39 @@
   }
 
   document.querySelectorAll("[data-discord-role-buy]").forEach(button => {
-    button.addEventListener("click", () => {
+    button.addEventListener("click", async () => {
       const role = discordRoles.find(r => r.id === button.dataset.discordRoleBuy);
       if (!role) return;
       if (!role.configured) {
-        alert("Este cargo ainda não está configurado para venda.");
+        alert("Este cargo ainda não está configurado.");
         return;
       }
       if (!discordLinkButton.classList.contains("linked")) {
-        alert("Vincule sua conta do Discord antes de comprar o cargo.");
+        alert("Vincule sua conta do Discord antes de pegar o cargo.");
         return;
       }
+
+      if (discordRoleTestMode) {
+        if (!discordRoleTestAllowed) {
+          alert("O teste temporário está reservado à administração.");
+          return;
+        }
+        const originalText = button.textContent;
+        button.disabled = true;
+        button.textContent = "ENVIANDO CARGO...";
+        try {
+          const data = await discordRoleApi("grant_test_role", { roleId: role.id });
+          if (!data.roleGranted) throw new Error("O Discord não confirmou a entrega do cargo.");
+          button.textContent = "CARGO ENTREGUE ✓";
+          alert("Teste concluído! O cargo " + (data.roleName || role.role_name) + " foi adicionado ao seu Discord.");
+        } catch (error) {
+          alert(error.message || "Não foi possível entregar o cargo.");
+          button.disabled = false;
+          button.textContent = originalText || "PEGAR CARGO";
+        }
+        return;
+      }
+
       openDiscordRoleModal(role);
     });
   });
