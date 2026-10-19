@@ -15,7 +15,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Manrope:wght@700;800&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="styles.css?v=202610191402" />
+  <link rel="stylesheet" href="styles.css?v=202610191430" />
 
   <style id="auth-critical">
     body.auth-locked{margin:0;overflow:hidden;background:#f7f6fc}
@@ -223,6 +223,71 @@
             </a>
 
             <small class="discord-invite-url">discord.gg/ABpuWgH2j</small>
+
+            <div class="discord-link-box">
+              <div>
+                <span class="discord-link-label">CONTA DISCORD</span>
+                <strong id="discord-link-status">Discord ainda não vinculado</strong>
+                <small>Vincule sua conta para receber automaticamente o cargo comprado.</small>
+              </div>
+              <button class="discord-link-button" id="discord-link-button" type="button">
+                <svg class="discord-icon" viewBox="0 0 64 48" aria-hidden="true">
+                  <path d="M52 5.5A43 43 0 0 0 41.5 2l-1.3 2.6A39 39 0 0 0 32 3.5a39 39 0 0 0-8.2 1.1L22.5 2A43 43 0 0 0 12 5.5C5.4 15.3 3.6 24.8 4.5 34.2A43 43 0 0 0 17.4 41l3.1-4.2a27 27 0 0 1-4.9-2.4l1.2-.9c9.5 4.4 19.8 4.4 30.2 0l1.3.9a30 30 0 0 1-5 2.4l3.1 4.2a43 43 0 0 0 12.9-6.8C60.5 23.3 57.3 13.9 52 5.5ZM23.5 29c-3 0-5.5-2.8-5.5-6.2s2.4-6.2 5.5-6.2c3.1 0 5.6 2.8 5.5 6.2 0 3.4-2.4 6.2-5.5 6.2Zm17 0c-3 0-5.5-2.8-5.5-6.2s2.4-6.2 5.5-6.2c3.1 0 5.6 2.8 5.5 6.2 0 3.4-2.4 6.2-5.5 6.2Z" fill="currentColor"/>
+                </svg>
+                <span>Vincular Discord</span>
+              </button>
+            </div>
+
+            <div class="discord-role-shop">
+              <div class="discord-role-shop-head">
+                <span class="discord-kicker">CARGOS ESPECIAIS</span>
+                <h3>Quer ser membro VIP no Discord? Compre seu cargo aqui também!</h3>
+                <p>Tenha atendimento mais rápido e participe de canais exclusivos que ficam liberados para membros com cargo.</p>
+              </div>
+
+              <div class="discord-role-grid">
+                <article class="discord-role-card vip" data-role-card="vip-hebooksista">
+                  <div class="discord-role-title"><span class="discord-role-dot"></span><strong>VIP H-ebooksista</strong></div>
+                  <ul>
+                    <li>Atendimento mais rápido e prioritário.</li>
+                    <li>Acesso para falar em canais exclusivos liberados para membros.</li>
+                    <li>Identificação especial no servidor.</li>
+                  </ul>
+                  <div class="discord-role-footer">
+                    <strong class="discord-role-price" data-role-price="vip-hebooksista">Preço a definir</strong>
+                    <button type="button" data-discord-role-buy="vip-hebooksista" disabled>Comprar cargo</button>
+                  </div>
+                </article>
+
+                <article class="discord-role-card junior" data-role-card="h-ebook-junior">
+                  <div class="discord-role-title"><span class="discord-role-dot"></span><strong>H ebook junior</strong></div>
+                  <ul>
+                    <li>Atendimento mais rápido e prioritário.</li>
+                    <li>Acesso para falar em canais exclusivos liberados para membros.</li>
+                    <li>Identificação especial no servidor.</li>
+                  </ul>
+                  <div class="discord-role-footer">
+                    <strong class="discord-role-price" data-role-price="h-ebook-junior">Preço a definir</strong>
+                    <button type="button" data-discord-role-buy="h-ebook-junior" disabled>Comprar cargo</button>
+                  </div>
+                </article>
+
+                <article class="discord-role-card buyer" data-role-card="maior-comprador">
+                  <div class="discord-role-title"><span class="discord-role-dot"></span><strong>Maior comprador</strong></div>
+                  <ul>
+                    <li>Atendimento mais rápido e prioritário.</li>
+                    <li>Acesso para falar em canais exclusivos liberados para membros.</li>
+                    <li>Identificação especial no servidor.</li>
+                  </ul>
+                  <div class="discord-role-footer">
+                    <strong class="discord-role-price" data-role-price="maior-comprador">Preço a definir</strong>
+                    <button type="button" data-discord-role-buy="maior-comprador" disabled>Comprar cargo</button>
+                  </div>
+                </article>
+              </div>
+
+              <p class="discord-auto-note">⚡ Depois da confirmação do pagamento, o H ebooks entrega o cargo automaticamente à conta do Discord vinculada.</p>
+            </div>
           </div>
         </div>
       </div>
@@ -396,6 +461,44 @@
     </div>
   </div>
 
+  <div class="modal discord-role-modal" id="discord-role-modal" aria-hidden="true">
+    <div class="modal-backdrop" data-close-discord-role></div>
+    <div class="modal-card discord-role-modal-card" role="dialog" aria-modal="true" aria-labelledby="discord-role-checkout-title">
+      <button class="modal-close" type="button" aria-label="Fechar" data-close-discord-role>×</button>
+
+      <span class="discord-kicker">LOJA DISCORD</span>
+      <h2 id="discord-role-checkout-title">Comprar cargo</h2>
+      <p class="modal-subtitle" id="discord-role-checkout-name"></p>
+      <strong class="discord-role-modal-price" id="discord-role-checkout-price"></strong>
+
+      <div class="discord-role-linked-note" id="discord-role-linked-note">Discord vinculado ✓</div>
+
+      <div class="payment-method-tabs">
+        <button type="button" class="payment-method-tab pix active" id="discord-role-method-pix"><span>◆</span> PIX</button>
+        <button type="button" class="payment-method-tab card" id="discord-role-method-card"><span>▣</span> CARTÃO</button>
+      </div>
+
+      <div id="discord-role-pix-panel">
+        <button class="btn btn-large full btn-pix" id="discord-role-pix-button" type="button">Gerar Pix</button>
+        <div id="discord-role-pix-area" class="hidden">
+          <div class="qr-wrap"><img id="discord-role-pix-image" alt="QR Code Pix do cargo Discord"></div>
+          <div class="pix-copy-area">
+            <label>Pix Copia e Cola<input id="discord-role-pix-code" readonly /></label>
+            <button class="btn btn-ghost full" id="discord-role-copy-pix" type="button">Copiar código Pix</button>
+          </div>
+          <button class="btn btn-large full" id="discord-role-check-status" type="button">Já paguei • verificar cargo</button>
+        </div>
+      </div>
+
+      <div id="discord-role-card-panel" class="hidden">
+        <button class="btn btn-large full btn-card" id="discord-role-card-button" type="button">Continuar com cartão</button>
+      </div>
+
+      <p class="form-message" id="discord-role-payment-status" role="status"></p>
+      <small class="privacy-note">O cargo só é liberado depois da confirmação oficial do pagamento.</small>
+    </div>
+  </div>
+
   <nav class="mobile-bottom-nav" aria-label="Navegação do celular">
     <a href="#inicio"><span class="mobile-nav-icon">⌂</span><small>Início</small></a>
     <a href="#catalogo"><span class="mobile-nav-icon">▦</span><small>eBooks</small></a>
@@ -404,7 +507,7 @@
   </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js?v=202610181358"></script>
-  <script src="app.js?v=202610181600"></script>
+  <script src="config.js?v=202610191430"></script>
+  <script src="app.js?v=202610191430"></script>
 </body>
 </html>
