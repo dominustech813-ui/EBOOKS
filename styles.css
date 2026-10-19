@@ -863,3 +863,182 @@ body.auth-locked > .discount-banner{display:none!important}
   }
   .mobile-discord-link{color:#5865f2!important}
 }
+
+
+/* Discord role shop */
+.discord-link-box{
+  margin-top:26px;
+  padding:16px;
+  border:1px solid #464950;
+  border-radius:16px;
+  background:#2b2d31;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:18px;
+}
+.discord-link-box>div{display:flex;flex-direction:column;gap:3px}
+.discord-link-label{color:#949ba4;font-size:9px;font-weight:900;letter-spacing:.1em}
+.discord-link-box strong{font-size:14px;color:#f2f3f5}
+.discord-link-box small{font-size:10px;color:#949ba4}
+.discord-link-button{
+  border:0;
+  border-radius:12px;
+  min-height:46px;
+  padding:11px 15px;
+  background:#5865f2;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  font:800 12px Inter,sans-serif;
+  cursor:pointer;
+  white-space:nowrap;
+}
+.discord-link-button.linked{background:#248046}
+.discord-link-button:disabled{opacity:.65;cursor:not-allowed}
+
+.discord-role-shop{
+  margin-top:38px;
+  padding-top:34px;
+  border-top:1px solid #464950;
+}
+.discord-role-shop-head h3{
+  max-width:760px;
+  margin:2px 0 10px;
+  color:#fff;
+  font:800 clamp(26px,3.2vw,40px)/1.06 Manrope,sans-serif;
+  letter-spacing:-.035em;
+}
+.discord-role-shop-head p{
+  max-width:760px;
+  color:#b5bac1;
+  font-size:14px;
+  line-height:1.55;
+}
+.discord-role-grid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:14px;
+  margin-top:22px;
+}
+.discord-role-card{
+  position:relative;
+  padding:20px;
+  border:1px solid #464950;
+  border-radius:18px;
+  background:#232428;
+  overflow:hidden;
+}
+.discord-role-card:before{
+  content:"";
+  position:absolute;
+  inset:0 auto auto 0;
+  width:100%;
+  height:4px;
+  background:var(--role-color);
+}
+.discord-role-card.vip{--role-color:#F0A52B}
+.discord-role-card.junior{--role-color:#9B59B6}
+.discord-role-card.buyer{--role-color:#D10B16}
+.discord-role-title{
+  display:flex;
+  align-items:center;
+  gap:9px;
+  color:#fff;
+  font:800 16px Manrope,sans-serif;
+}
+.discord-role-dot{
+  width:13px;
+  height:13px;
+  border-radius:50%;
+  background:var(--role-color);
+  box-shadow:0 0 0 4px color-mix(in srgb,var(--role-color) 18%,transparent);
+}
+.discord-role-card ul{
+  min-height:118px;
+  margin:18px 0;
+  padding-left:18px;
+  color:#b5bac1;
+  font-size:12px;
+  line-height:1.5;
+}
+.discord-role-card li{margin-bottom:7px}
+.discord-role-footer{
+  padding-top:15px;
+  border-top:1px solid #3f4147;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+.discord-role-price{color:#fff;font:800 18px Manrope,sans-serif}
+.discord-role-footer button{
+  width:100%;
+  min-height:44px;
+  border:0;
+  border-radius:11px;
+  background:var(--role-color);
+  color:#fff;
+  font-weight:900;
+  cursor:pointer;
+}
+.discord-role-footer button:disabled{
+  background:#404249;
+  color:#949ba4;
+  cursor:not-allowed;
+}
+.discord-auto-note{
+  margin:16px 0 0!important;
+  color:#c9cdfb!important;
+  font-size:11px!important;
+}
+
+.discord-role-modal-card{background:#313338;color:#f2f3f5;border:1px solid #464950}
+.discord-role-modal-card .modal-close{background:#404249;color:#fff}
+.discord-role-modal-card .modal-subtitle{color:#b5bac1}
+.discord-role-modal-price{
+  display:block;
+  margin-top:8px;
+  font:800 28px Manrope,sans-serif;
+  color:#fff;
+}
+.discord-role-linked-note{
+  margin-top:16px;
+  padding:10px 12px;
+  border-radius:11px;
+  background:#1f6f43;
+  color:#d9fbe7;
+  font-size:11px;
+  font-weight:800;
+}
+.discord-role-modal-card .payment-method-tab{
+  background:#232428;
+  border-color:#464950;
+  color:#f2f3f5;
+}
+.discord-role-modal-card .pix-copy-area input{
+  color:#201b34;
+  background:#fff;
+}
+.discord-role-modal-card .privacy-note,
+.discord-role-modal-card .form-message{color:#b5bac1}
+
+@media(max-width:900px){
+  .discord-role-grid{grid-template-columns:1fr}
+  .discord-role-card ul{min-height:auto}
+}
+@media(max-width:640px){
+  .discord-link-box{
+    align-items:stretch;
+    flex-direction:column;
+  }
+  .discord-link-button{width:100%}
+  .discord-role-shop{margin-top:28px;padding-top:26px}
+  .discord-role-shop-head h3{font-size:27px}
+  .discord-role-grid{gap:11px}
+  .discord-role-card{padding:18px}
+  .discord-role-modal-card{
+    background:#313338!important;
+  }
+}
