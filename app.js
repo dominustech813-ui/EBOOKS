@@ -1275,7 +1275,7 @@
                 ? "Integração pendente"
                 : !data.linked
                   ? "Vincule o Discord primeiro"
-                  : "Comprar cargo";
+                  : "GERAR PIX • " + money.format(Number(role.price));
           }
         }
       });
@@ -1532,6 +1532,26 @@
       }
 
       openDiscordRoleModal(role);
+      discordRolePaymentStatus.classList.remove("error");
+      discordRolePaymentStatus.textContent = "Gerando Pix...";
+      button.disabled = true;
+      const originalText = button.textContent;
+      button.textContent = "GERANDO PIX...";
+      try {
+        const data = await discordRoleApi("create_pix", { roleId: role.id });
+        discordRoleCheckoutToken = data.checkoutToken || "";
+        discordRolePixCode.value = data.qrCode || "";
+        discordRolePixImage.src = data.qrCodeBase64 ? "data:image/png;base64," + data.qrCodeBase64 : "";
+        discordRolePixArea.classList.remove("hidden");
+        discordRolePaymentStatus.textContent = "Pix gerado. Aguardando a confirmação do pagamento...";
+        clearTimeout(discordRolePollTimer);
+        discordRolePollTimer = setTimeout(() => checkDiscordRolePayment(false), 4000);
+      } catch (error) {
+        discordRolePaymentStatus.textContent = error.message || "Não foi possível gerar o Pix.";
+        discordRolePaymentStatus.classList.add("error");
+        button.disabled = false;
+        button.textContent = originalText || ("GERAR PIX • " + money.format(Number(role.price)));
+      }
     });
   });
 
