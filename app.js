@@ -1031,12 +1031,14 @@
       } else if (data.linked) {
         discordLinkStatus.textContent = "Vinculado como " + (data.discord?.username || "Discord");
         discordLinkButton.classList.add("linked");
-        discordLinkButton.disabled = true;
-        discordLinkButton.querySelector("span").textContent = "Discord vinculado ✓";
+        discordLinkButton.disabled = false;
+        discordLinkButton.dataset.linked = "true";
+        discordLinkButton.querySelector("span").textContent = "Desvincular Discord";
       } else {
         discordLinkStatus.textContent = "Discord ainda não vinculado";
         discordLinkButton.classList.remove("linked");
         discordLinkButton.disabled = false;
+        discordLinkButton.dataset.linked = "false";
         discordLinkButton.querySelector("span").textContent = "Vincular Discord";
       }
 
@@ -1098,6 +1100,27 @@
 
   if (discordLinkButton) {
     discordLinkButton.addEventListener("click", async () => {
+      const linked = discordLinkButton.dataset.linked === "true";
+
+      if (linked) {
+        const confirmed = window.confirm(
+          "Deseja desvincular sua conta do Discord do H ebooks?\n\n" +
+          "Os cargos que você já recebeu no servidor não serão removidos."
+        );
+        if (!confirmed) return;
+
+        discordLinkButton.disabled = true;
+        try {
+          await discordRoleApi("unlink");
+          await loadDiscordStore();
+          alert("Conta do Discord desvinculada com sucesso.");
+        } catch (error) {
+          alert(error.message || "Não foi possível desvincular o Discord.");
+          discordLinkButton.disabled = false;
+        }
+        return;
+      }
+
       discordLinkButton.disabled = true;
       try {
         const data = await discordRoleApi("link");
