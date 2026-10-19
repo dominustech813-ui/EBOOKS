@@ -896,8 +896,9 @@ body.auth-locked > .discount-banner{display:none!important}
   cursor:pointer;
   white-space:nowrap;
 }
-.discord-link-button.linked{background:#248046}
+.discord-link-button.linked{background:#da373c}
 .discord-link-button:disabled{opacity:.65;cursor:not-allowed}
+.discord-link-button.linked:hover{background:#a1282c}
 
 .discord-role-shop{
   margin-top:38px;
