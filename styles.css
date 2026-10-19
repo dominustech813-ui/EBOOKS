@@ -1043,3 +1043,22 @@ body.auth-locked > .discount-banner{display:none!important}
     background:#313338!important;
   }
 }
+
+
+/* Discord temporary role test */
+.discord-test-note{
+  margin-top:12px!important;
+  padding:13px 14px;
+  border:1px solid #5865f2;
+  border-radius:12px;
+  background:rgba(88,101,242,.12);
+  color:#d8dbff!important;
+  font-size:12px!important;
+}
+.discord-role-price{
+  font-size:13px!important;
+  color:#b9c0ff!important;
+}
+.discord-role-footer button:not(:disabled){
+  box-shadow:0 8px 20px rgba(88,101,242,.2);
+}
