@@ -1730,3 +1730,13 @@ body.auth-locked > .discount-banner{display:none!important}
 .ebook-cover.illustrated-cover .ebook-cover-copy strong,.ebook-cover.illustrated-cover .ebook-cover-copy small{color:#fff!important}
 .ebook-cover.illustrated-cover .ebook-cover-art-wrap{z-index:0}
 .ebook-cover.illustrated-cover:before,.ebook-cover.illustrated-cover:after{pointer-events:none}
+
+
+/* Obras de anime e Bob Esponja: material visual original das séries, nunca desenhos improvisados. */
+.ebook-cover-photo.original-anime-photo{opacity:0;transition:opacity .25s ease}
+.ebook-cover-photo.original-anime-photo.is-ready{opacity:1}
+.ebook-cover-art-wrap:has(.original-anime-photo),.checkout-cover-art:has(.original-anime-photo){background:linear-gradient(135deg,#212044,#43307d,#111827)}
+.ebook-cover-art-wrap:has(.original-anime-photo)::before,.checkout-cover-art:has(.original-anime-photo)::before{
+ content:"ARTE ORIGINAL";position:absolute;top:42%;left:0;right:0;text-align:center;color:#fff;
+ font:800 11px/1.5 Inter,sans-serif;letter-spacing:.18em;opacity:.5;z-index:0
+}
