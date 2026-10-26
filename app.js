@@ -330,6 +330,7 @@
     }
     checkoutArt.innerHTML = buildIllustratedCover(product);
     hydrateOriginalArtwork(checkoutArt, true);
+    hydrateStockPhotoFallback(checkoutArt);
     pixButton.textContent = "Gerar Pix de " + money.format(Number(product.price));
     cardButton.textContent = "Continuar com cartão • " + money.format(Number(product.price));
   }
@@ -671,24 +672,296 @@
     });
   }
 
+
+  // Catálogo de fotos fotográficas documentadas no Pexels.
+  // NÃO são ilustrações feitas por IA. O banco licencia as fotografias para uso comercial.
+  // Mantemos links fixos para evitar instabilidade das APIs de busca no navegador.
+  const photoByCategory = {
+    "alimentacao": [
+        2544829,
+        28703302,
+        8629107
+    ],
+    "artesanato": [
+        5602977,
+        35155839,
+        5602994,
+        2062069,
+        8931780,
+        5602969
+    ],
+    "bem-estar": [
+        6539880,
+        6285212,
+        14591593
+    ],
+    "carreira": [
+        36733403,
+        27086215,
+        7652054,
+        5060973,
+        36733318,
+        9301305
+    ],
+    "casa e decoracao": [
+        28905874,
+        28991200,
+        30828845,
+        16648047,
+        8082301,
+        19899076
+    ],
+    "ciencias": [
+        8531348,
+        9243728,
+        9574506,
+        9243748,
+        8533019,
+        9243745
+    ],
+    "comunicacao": [
+        36733318,
+        9301305,
+        7652054
+    ],
+    "culinaria": [
+        28703302,
+        5907617,
+        36982369,
+        2544829,
+        17509184,
+        28703283,
+        8629107
+    ],
+    "cultura e lazer": [
+        8438872,
+        6114955,
+        37793418,
+        5648521,
+        7387001,
+        35597588
+    ],
+    "desenvolvimento pessoal": [
+        6539880,
+        5060973,
+        37825338
+    ],
+    "design": [
+        35597588,
+        37793418,
+        8931780,
+        13898113,
+        35155839
+    ],
+    "educacao e estudos": [
+        37825338,
+        36488453,
+        7635240,
+        37825338
+    ],
+    "ficcao": [
+        37825338,
+        7635240,
+        6114955
+    ],
+    "financas": [
+        36488453,
+        36733318,
+        5060973
+    ],
+    "fotografia e video": [
+        13898113,
+        24374988,
+        7387001,
+        4313724,
+        6420007,
+        15545297
+    ],
+    "geografia": [
+        7635240,
+        16096878,
+        38673906,
+        15291278
+    ],
+    "historia": [
+        7635240,
+        37825338,
+        13898113
+    ],
+    "ia e trabalho": [
+        34804003,
+        36496927,
+        9553905
+    ],
+    "idiomas": [
+        37825338,
+        7635240,
+        36488453,
+        16096878
+    ],
+    "inteligencia artificial": [
+        36496927,
+        34804016,
+        7988086
+    ],
+    "jardinagem": [
+        3153526,
+        7494036,
+        1117275,
+        15291278,
+        11577991,
+        38673906
+    ],
+    "marketing": [
+        36733318,
+        7652054,
+        35597588
+    ],
+    "matematica pratica": [
+        36488453,
+        36733318,
+        37825338
+    ],
+    "musica": [
+        5648521,
+        6671990,
+        3774606,
+        9644665,
+        27677835,
+        29184728
+    ],
+    "negocios": [
+        36733403,
+        9301305,
+        27086215
+    ],
+    "organizacao": [
+        28905874,
+        6077067,
+        37825338
+    ],
+    "pets": [
+        7171981,
+        30736638,
+        26705060,
+        2408649,
+        3705254,
+        11289280,
+        7725611
+    ],
+    "produtividade": [
+        5060973,
+        37825338,
+        27086215
+    ],
+    "programacao": [
+        5926382,
+        4078342,
+        9553905,
+        7988086,
+        6424590,
+        34803966,
+        34804003
+    ],
+    "saude": [
+        6539880,
+        13621287,
+        14591593
+    ],
+    "suspense": [
+        7635240,
+        6114955,
+        37825338
+    ],
+    "sustentabilidade": [
+        7114149,
+        6591438,
+        7512909,
+        7512867,
+        7114146,
+        38673906
+    ],
+    "tecnologia basica": [
+        34804003,
+        4078342,
+        5926382,
+        7988086,
+        34804016,
+        34803966
+    ],
+    "viagem": [
+        16096878,
+        7635240,
+        6420007,
+        4313724
+    ]
+};
+  const photoByTopic = [
+    { test: /cachorro|cao|caes|passeios mais tranquilos|pet novo/, photos: [26705060,2408649,3705254] },
+    { test: /gato|felino/, photos: [7171981,30736638,7725611,11289280] },
+    { test: /suculenta|cacto/, photos: [1117275,38937287,7494036] },
+    { test: /planta|horta|jardim|temperos em vasos/, photos: [3153526,11577991,15291278,38673906] },
+    { test: /massas|macarrao|espaguete/, photos: [36982369,5907617,4699966,6748831] },
+    { test: /paes|pao|padaria/, photos: [36445126,36445170] },
+    { test: /cafe em casa|coffee|cafe\b/, photos: [36871273,28678822,22873809] },
+    { test: /chas e infusoes|cha\b/, photos: [36228277,8329979,18785046] },
+    { test: /recicla|desperdicio|reutiliz|lixo eletronico|consumo consciente/, photos: [7114149,6591438,7512909,7512867] },
+    { test: /astronomia|telescopio/, photos: [18071664] },
+    { test: /xadrez|tabuleiro/, photos: [8438872,6114955,6114952] },
+    { test: /fotografia de pets/, photos: [26705060,7171981] },
+    { test: /geometria|porcentagem|algebra|fracoes|estatistica|matematica financeira/, photos: [36488453] },
+    { test: /camera|fotografia|retratos|reels visuais|video com celular/, photos: [13898113,4313724,24374988,7387001] },
+    { test: /guitarra|violao|teclado|instrumentos|acordes/, photos: [5648521,6671990,3774606] },
+    { test: /canva|cores|tipografia|layout|ilustracao|aquarela|desenho|posts|design|identidade visual/, photos: [35597588,37793418,8931780] },
+    { test: /html|css do zero|javascript|python|java para|sql|github|programacao|api\b/, photos: [5926382,9553905,34803966,7988086] },
+    { test: /primeira viagem|roteiro|turismo|viagem|destino/, photos: [16096878,7635240,6420007] },
+    { test: /entrevista|linkedin|networking|curriculo|carreira|trabalho remoto/, photos: [36733403,27086215,9301305,7652054] }
+  ];
+  function stablePhotoIndex(value, length) {
+    const str = String(value || "");
+    let hash = 2166136261;
+    for (let i=0;i<str.length;i++) hash = Math.imul(hash ^ str.charCodeAt(i), 16777619);
+    return (hash >>> 0) % length;
+  }
+  function stockPhotoId(product) {
+    const title = coverKey(product.title);
+    const group = photoByTopic.find(entry => entry.test.test(title));
+    const category = coverKey(product.category);
+    const images = group?.photos || photoByCategory[category] || [37825338, 28905874, 13898113];
+    return images[stablePhotoIndex(product.id || product.title, images.length)];
+  }
   function premiumPhotoFor(product) {
-    const key = coverKey([product.title, product.subtitle, product.category, product.description].join(" "));
-    let type = "books";
-    if (/hamburg|receita|cozinha|culin|aliment|chocolate|bolo|pizz|comida|gastronom/.test(key)) type="food";
-    else if (/viag|turismo|paises|mundo|destino/.test(key)) type="travel";
-    else if (/finan|dinheiro|invest|renda|econom|venda|empreend|negocio/.test(key)) type="finance";
-    else if (/inteligencia artificial|\bia\b|tecnolog|robot|digital|program|comput|internet|software/.test(key)) type="technology";
-    else if (/estud|escola|educa|aprender|historia|matemat|lingua|ingles|geograf/.test(key)) type="study";
-    else if (/saude|medic|nutri|doenca|imun|corpo humano/.test(key)) type="health";
-    else if (/esporte|treino|muscul|exercicio|academia|fitness/.test(key)) type="fitness";
-    else if (/mindfulness|medit|ansiedade|paz interior|bem-estar/.test(key)) type="meditation";
-    else if (/naturez|planta|jardim|floresta|meio ambiente/.test(key)) type="nature";
-    else if (/musica|instrumento|violao|guitarra/.test(key)) type="music";
-    else if (/arte|pintura|desenho|criativ/.test(key)) type="art";
-    else if (/animal|cachorro|gato|pet/.test(key)) type="animals";
-    else if (/lider|comunic|psicolog|autoconhec|relacionamento/.test(key)) type="portrait";
-    else if (/cidade|arquitet|urbano/.test(key)) type="city";
-    return "https://images.unsplash.com/" + premiumPhotos[type] + "?auto=format&fit=crop&w=900&q=85";
+    const id = stockPhotoId(product);
+    return "https://images.pexels.com/photos/" + id + "/pexels-photo-" + id +
+      ".jpeg?auto=compress&cs=tinysrgb&w=900&h=1150&fit=crop";
+  }
+
+  // Se uma imagem externa não carregar, mantenha foto alternativa real,
+  // sem texto alternativo quebras e sem interromper o catálogo.
+  function hydrateStockPhotoFallback(root) {
+    if (!root) return;
+    root.querySelectorAll("img[data-stock-photo]").forEach(img => {
+      if (img.dataset.stockBound) return;
+      img.dataset.stockBound = "1";
+      img.addEventListener("error", () => {
+        if (!img.isConnected) return;
+        const category = img.dataset.stockCategory || "books";
+        const key = /program|tecnolog|inteligencia|design/.test(category) ? "technology" :
+          /viag|geograf/.test(category) ? "travel" :
+          /culin|aliment/.test(category) ? "food" :
+          /jardin|sustentab/.test(category) ? "nature" :
+          /pets/.test(category) ? "animals" :
+          /esporte|saude|bem-estar/.test(category) ? "health" : "books";
+        if (img.dataset.stockFallback !== "1") {
+          img.dataset.stockFallback = "1";
+          img.src = "https://images.unsplash.com/" + premiumPhotos[key] +
+            "?auto=format&fit=crop&w=900&q=80";
+          return;
+        }
+        img.style.display = "none";
+        img.parentElement?.classList.add("cover-unavailable");
+      });
+    });
   }
 
   function buildIllustratedCover(product) {
@@ -702,7 +975,7 @@
         escapeHtml(product.id) + '" alt="Imagem de ' + escapeHtml(product.title) +
         '"><span class="ebook-photo-shade" aria-hidden="true"></span>' + credit;
     }
-    return '<img class="ebook-cover-photo" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="" src="' +
+    return '<img class="ebook-cover-photo" data-stock-photo="1" data-stock-category="' + escapeHtml(product.category) + '" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="Fotografia relacionada a ' + escapeHtml(product.title) + '" src="' +
       premiumPhotoFor(product) + '"><span class="ebook-photo-shade" aria-hidden="true"></span>';
   }
 
@@ -785,6 +1058,7 @@
       ebookGrid.appendChild(card);
     });
     hydrateOriginalArtwork(ebookGrid);
+    hydrateStockPhotoFallback(ebookGrid);
   }
 
 
