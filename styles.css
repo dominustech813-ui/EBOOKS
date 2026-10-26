@@ -1720,3 +1720,13 @@ body.auth-locked > .discount-banner{display:none!important}
 .reader-review-form textarea{resize:vertical}
 .reader-dialog :focus-visible{outline:3px solid var(--brand);outline-offset:3px}
 @media(max-width:640px){.reader-dialog{padding:18px}.reader-dialog h2{font-size:24px}.reader-review-form input,.reader-review-form select,.reader-review-form textarea{font-size:16px}}
+
+/* Capas premium com fotografia real no catálogo e checkout */
+.ebook-cover.illustrated-cover,.checkout-cover.illustrated-checkout-cover{background:#131323!important;color:#fff!important;isolation:isolate;overflow:hidden}
+.ebook-cover-art-wrap,.checkout-cover-art{position:absolute;inset:0;overflow:hidden;pointer-events:none}
+.ebook-cover-photo{display:block;width:100%;height:100%;object-fit:cover;object-position:center;filter:saturate(1.16) contrast(1.08);transform:scale(1.025)}
+.ebook-photo-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(7,8,21,.42) 0%,rgba(7,8,21,.07) 35%,rgba(7,8,21,.88) 100%)}
+.ebook-cover.illustrated-cover .ebook-cover-brand,.ebook-cover.illustrated-cover .ebook-cover-copy,.checkout-cover.illustrated-checkout-cover > :not(.checkout-cover-art){position:relative;z-index:2;text-shadow:0 2px 12px rgba(0,0,0,.6)}
+.ebook-cover.illustrated-cover .ebook-cover-copy strong,.ebook-cover.illustrated-cover .ebook-cover-copy small{color:#fff!important}
+.ebook-cover.illustrated-cover .ebook-cover-art-wrap{z-index:0}
+.ebook-cover.illustrated-cover:before,.ebook-cover.illustrated-cover:after{pointer-events:none}
