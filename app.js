@@ -759,7 +759,6 @@
       card.append(cover, body);
       ebookGrid.appendChild(card);
     });
-    if (artworkObserver) artworkObserver.disconnect();
     hydrateOriginalArtwork(ebookGrid);
   }
 
