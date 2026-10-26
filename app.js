@@ -112,6 +112,12 @@
   const gateGithubButton = document.getElementById("gate-github-button");
   const gateGithubNote = document.getElementById("gate-github-note");
 
+  const readerExperience = window.createReaderExperience({
+    client: sb,
+    endpoint: config.supabaseUrl + "/functions/v1/reader-experience",
+    onBuy: handleProductClick
+  });
+
   let products = [];
   let selectedProduct = null;
   let automaticPayments = false;
@@ -776,6 +782,7 @@
       button.addEventListener("click", () => handleProductClick(product));
 
       body.appendChild(button);
+      readerExperience.addButtons(body, product);
       card.append(cover, body);
       ebookGrid.appendChild(card);
     });
