@@ -1768,3 +1768,21 @@ body.auth-locked > .discount-banner{display:none!important}
 }
 .ebook-cover-photo.original-anime-photo[src] { display: block !important; }
 .ebook-cover-art-wrap:has(.original-anime-photo) { isolation: isolate; }
+
+
+/* AniList entrega banners horizontais: a arte do personagem fica à direita.
+   Recortes verticais centralizados escondiam o personagem. */
+.ebook-cover-art-wrap img.original-anime-photo:not([data-original-artwork^="colecao225-22"]),
+.checkout-cover-art img.original-anime-photo:not([data-original-artwork^="colecao225-22"]),
+.ebook-cover-art-wrap img.original-anime-photo[data-original-artwork="colecao225-220-solo-leveling"],
+.checkout-cover-art img.original-anime-photo[data-original-artwork="colecao225-220-solo-leveling"] {
+  object-fit: cover !important;
+  object-position: right center !important;
+  padding: 0 !important;
+}
+.ebook-cover.illustrated-cover:has(.original-anime-photo)::after{
+  background:linear-gradient(180deg, rgba(7,9,22,.02) 5%,rgba(7,9,22,.04) 45%,rgba(7,9,22,.82) 100%) !important;
+}
+.ebook-cover.illustrated-cover:has(.original-anime-photo) .ebook-photo-shade{
+  background:linear-gradient(180deg,rgba(5,8,18,.20),transparent 42%,rgba(5,8,18,.78) 100%) !important;
+}
