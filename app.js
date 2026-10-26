@@ -578,143 +578,71 @@
 
   // Imagens verdadeiras de títulos de terceiros, NÃO desenhos gerados por IA.
   // MAL IDs fixos garantem que cada poster seja da série certa (Jikan/MyAnimeList).
+
+  // URL DIRETA: o navegador carrega a foto sem precisar aguardar buscas em APIs.
+  // Caso a fonte original falhe, tenta apenas então uma fonte alternativa.
   const originalArtwork = {
-    "colecao225-201-naruto": { mal: 20, wiki: "Naruto" },
-    "colecao225-202-one-piece": { mal: 21, wiki: "One Piece" },
-    "colecao225-203-dragon-ball": { mal: 223, wiki: "Dragon Ball" },
-    "colecao225-204-demon-slayer": { mal: 38000, wiki: "Demon Slayer: Kimetsu no Yaiba" },
-    "colecao225-205-attack-on-titan": { mal: 16498, wiki: "Attack on Titan" },
-    "colecao225-206-my-hero-academia": { mal: 31964, wiki: "My Hero Academia" },
-    "colecao225-207-jujutsu-kaisen": { mal: 40748, wiki: "Jujutsu Kaisen" },
-    "colecao225-208-spy-x-family": { mal: 50265, wiki: "Spy × Family" },
-    "colecao225-209-pokemon": { mal: 527, wiki: "Pokémon (TV series)" },
-    "colecao225-210-sailor-moon": { mal: 530, wiki: "Sailor Moon" },
-    "colecao225-211-death-note": { mal: 1535, wiki: "Death Note" },
-    "colecao225-212-fullmetal-alchemist-brotherhood": { mal: 5114, wiki: "Fullmetal Alchemist: Brotherhood" },
-    "colecao225-213-haikyuu": { mal: 20583, wiki: "Haikyu!!" },
-    "colecao225-214-hunter-x-hunter": { mal: 11061, wiki: "Hunter × Hunter" },
-    "colecao225-215-bleach": { mal: 269, wiki: "Bleach (TV series)" },
-    "colecao225-216-one-punch-man": { mal: 30276, wiki: "One-Punch Man" },
-    "colecao225-217-tokyo-revengers": { mal: 42249, wiki: "Tokyo Revengers" },
-    "colecao225-218-chainsaw-man": { mal: 44511, wiki: "Chainsaw Man" },
-    "colecao225-219-frieren-beyond-journey-s-end": { mal: 52991, wiki: "Frieren" },
-    "colecao225-220-solo-leveling": { mal: 52299, wiki: "Solo Leveling" },
-    "colecao225-221-bob-esponja": { wiki: "SpongeBob SquarePants (character)" },
-    "colecao225-222-patrick-estrela": { wiki: "Patrick Star" },
-    "colecao225-223-sr-siriguejo": { wiki: "Mr. Krabs" },
-    "colecao225-224-sandy-bochechas": { wiki: "Sandy Cheeks" },
-    "colecao225-225-lula-molusco": { wiki: "Squidward Tentacles" }
+    "colecao225-201-naruto": { url: "https://img.anili.st/media/20", mal: 20 },
+    "colecao225-202-one-piece": { url: "https://img.anili.st/media/21", mal: 21 },
+    "colecao225-203-dragon-ball": { url: "https://img.anili.st/media/223", mal: 223 },
+    "colecao225-204-demon-slayer": { url: "https://img.anili.st/media/101922", mal: 38000 },
+    "colecao225-205-attack-on-titan": { url: "https://img.anili.st/media/16498", mal: 16498 },
+    "colecao225-206-my-hero-academia": { url: "https://img.anili.st/media/21459", mal: 31964 },
+    "colecao225-207-jujutsu-kaisen": { url: "https://img.anili.st/media/113415", mal: 40748 },
+    "colecao225-208-spy-x-family": { url: "https://img.anili.st/media/140960", mal: 50265 },
+    "colecao225-209-pokemon": { url: "https://img.anili.st/media/527", mal: 527 },
+    "colecao225-210-sailor-moon": { url: "https://img.anili.st/media/530", mal: 530 },
+    "colecao225-211-death-note": { url: "https://img.anili.st/media/1535", mal: 1535 },
+    "colecao225-212-fullmetal-alchemist-brotherhood": { url: "https://img.anili.st/media/5114", mal: 5114 },
+    "colecao225-213-haikyuu": { url: "https://img.anili.st/media/20464", mal: 20583 },
+    "colecao225-214-hunter-x-hunter": { url: "https://img.anili.st/media/11061", mal: 11061 },
+    "colecao225-215-bleach": { url: "https://img.anili.st/media/269", mal: 269 },
+    "colecao225-216-one-punch-man": { url: "https://img.anili.st/media/21087", mal: 30276 },
+    "colecao225-217-tokyo-revengers": { url: "https://img.anili.st/media/120120", mal: 42249 },
+    "colecao225-218-chainsaw-man": { url: "https://img.anili.st/media/127230", mal: 44511 },
+    "colecao225-219-frieren-beyond-journey-s-end": { url: "https://img.anili.st/media/154587", mal: 52991 },
+    "colecao225-220-solo-leveling": { url: "https://img.anili.st/media/151807", mal: 52299 },
+    "colecao225-221-bob-esponja": { url: "https://upload.wikimedia.org/wikipedia/commons/7/7a/SpongeBob_SquarePants_character.png", commons: "SpongeBob_SquarePants_character.png" },
+    "colecao225-222-patrick-estrela": { url: "https://upload.wikimedia.org/wikipedia/commons/2/28/Patrick_Star_character.png", commons: "Patrick_Star_character.png" },
+    "colecao225-223-sr-siriguejo": { url: "https://upload.wikimedia.org/wikipedia/commons/c/ce/Mr_Krabs_character.png", commons: "Mr_Krabs_character.png" },
+    "colecao225-224-sandy-bochechas": { url: "https://upload.wikimedia.org/wikipedia/commons/b/bb/Sandy_Cheeks_character.png", commons: "Sandy_Cheeks_character.png" },
+    "colecao225-225-lula-molusco": { url: "https://upload.wikimedia.org/wikipedia/commons/e/e1/Squidward_Tentacles_character.png", commons: "Squidward_Tentacles_character.png" }
   };
-  const originalArtworkCache = new Map();
-  const originalArtworkPending = new Map();
-  const originalArtworkQueue = [];
-  let originalArtworkRunning = false;
 
-  async function wikipediaArtwork(title) {
-    const params = new URLSearchParams({
-      action: "query", prop: "pageimages", titles: title,
-      piprop: "thumbnail", pithumbsize: "900", pilicense: "any",
-      format: "json", redirects: "1", origin: "*"
-    });
-    const response = await fetch("https://en.wikipedia.org/w/api.php?" + params, {cache:"force-cache"});
-    if (!response.ok) throw new Error("Wikipedia artwork unavailable");
-    const pages = Object.values((await response.json()).query?.pages || {});
-    const url = pages.find(page => page.thumbnail?.source)?.thumbnail?.source || "";
-    return /^https:\/\//.test(url) ? url : "";
-  }
-
-  async function resolveOriginalArtwork(id) {
-    if (originalArtworkCache.has(id)) return originalArtworkCache.get(id);
-    if (originalArtworkPending.has(id)) return originalArtworkPending.get(id);
-    const spec = originalArtwork[id];
-    if (!spec) return "";
-    const pending = (async () => {
-      let url = "";
-      if (spec.mal) {
-        try {
-          const res = await fetch("https://api.jikan.moe/v4/anime/" + spec.mal, {cache:"force-cache"});
-          if (res.ok) {
-            const data = (await res.json()).data || {};
-            url = data.images?.webp?.large_image_url || data.images?.jpg?.large_image_url || "";
-          }
-        } catch (error) {
-          console.warn("Capa anime indisponível:", id, error);
-        }
-      }
-      if (!/^https:\/\//.test(url) && spec.wiki) {
-        try { url = await wikipediaArtwork(spec.wiki); } catch (error) {
-          console.warn("Imagem original indisponível:", id, error);
-        }
-      }
-      if (!/^https:\/\//.test(url)) url = "";
-      originalArtworkCache.set(id, url);
-      return url;
-    })();
-    originalArtworkPending.set(id, pending);
-    try { return await pending; }
-    finally { originalArtworkPending.delete(id); }
-  }
-
-  function showOriginalArtwork(img, url) {
-    if (!img.isConnected || !/^https:\/\//.test(url)) return;
-    img.addEventListener("load", () => img.classList.add("is-ready"), {once:true});
-    img.addEventListener("error", async () => {
-      const spec = originalArtwork[img.dataset.originalArtwork];
-      if (!spec?.wiki || img.dataset.wikiFallback) return;
-      img.dataset.wikiFallback = "1";
-      try {
-        const alternative = await wikipediaArtwork(spec.wiki);
-        if (alternative && alternative !== url && img.isConnected) {
-          showOriginalArtwork(img, alternative);
-        }
-      } catch (e) {
-        console.warn("Não foi possível carregar arte original", e);
-      }
-    }, {once:true});
-    img.src = url;
-  }
-
-  function enqueueOriginalArtwork(img, urgent) {
-    if (img.dataset.artworkQueued) return;
-    img.dataset.artworkQueued = "1";
-    const id = img.dataset.originalArtwork;
-    if (originalArtworkCache.has(id)) {
-      showOriginalArtwork(img, originalArtworkCache.get(id));
-      return;
-    }
-    (urgent ? originalArtworkQueue.unshift : originalArtworkQueue.push).call(originalArtworkQueue, {id, img});
-    runOriginalArtworkQueue();
-  }
-
-  async function runOriginalArtworkQueue() {
-    if (originalArtworkRunning) return;
-    originalArtworkRunning = true;
-    try {
-      while (originalArtworkQueue.length) {
-        const {id, img} = originalArtworkQueue.shift();
-        try { showOriginalArtwork(img, await resolveOriginalArtwork(id)); }
-        catch (e) { console.warn("Falha ao carregar capa:", id, e); }
-        // Respeita limite de requisições das fontes de imagem.
-        await new Promise(resolve => setTimeout(resolve, 550));
-      }
-    } finally { originalArtworkRunning = false; }
-  }
-
-  const artworkObserver = typeof IntersectionObserver !== "undefined"
-    ? new IntersectionObserver(entries => {
-        entries.forEach(entry => {
-          if (entry.isIntersecting) {
-            artworkObserver.unobserve(entry.target);
-            enqueueOriginalArtwork(entry.target, false);
-          }
-        });
-      }, {rootMargin: "340px"}) : null;
-
-  function hydrateOriginalArtwork(root, urgent = false) {
+  function hydrateOriginalArtwork(root) {
     if (!root) return;
-    root.querySelectorAll("img[data-original-artwork]").forEach(img => {
-      if (!urgent && artworkObserver) artworkObserver.observe(img);
-      else enqueueOriginalArtwork(img, true);
+    root.querySelectorAll('img[data-original-artwork]').forEach(img => {
+      const spec = originalArtwork[img.dataset.originalArtwork];
+      if (!spec || img.dataset.coverBound) return;
+      img.dataset.coverBound = "1";
+      const onImageError = async () => {
+        if (!img.isConnected) return;
+        // Imagens de personagens têm endereço direto estático verificado no Wikimedia.
+        // Para animes, só consulta a fonte reserva se o link direto falhar.
+        if (spec.mal && img.dataset.fallbackTried !== "1") {
+          img.dataset.fallbackTried = "1";
+          try {
+            const res = await fetch("https://api.jikan.moe/v4/anime/" + spec.mal);
+            if (res.ok) {
+              const data = (await res.json()).data || {};
+              const replacement = data.images?.jpg?.large_image_url || data.images?.webp?.large_image_url;
+              if (replacement && replacement !== img.src && img.isConnected) {
+                img.src = replacement;
+                return;
+              }
+            }
+          } catch (error) { console.warn("Capa reserva indisponível:", error); }
+        }
+        img.removeAttribute("src");
+        img.style.display = "none"; // Não mostra ícone quebrado nem texto alternativo.
+        img.parentElement?.classList.add("cover-unavailable");
+      };
+      img.addEventListener("error", onImageError);
+      img.addEventListener("load", () => img.classList.add("is-ready"));
+      if (img.complete) {
+        if (img.naturalWidth > 0) img.classList.add("is-ready");
+        else onImageError();
+      }
     });
   }
 
@@ -739,10 +667,15 @@
   }
 
   function buildIllustratedCover(product) {
-    if (Object.prototype.hasOwnProperty.call(originalArtwork, product.id)) {
-      return '<img class="ebook-cover-photo original-anime-photo" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-original-artwork="' +
-        escapeHtml(product.id) + '" alt="Arte original de ' + escapeHtml(product.title) +
-        '"><span class="ebook-photo-shade" aria-hidden="true"></span>';
+    const spec = originalArtwork[product.id];
+    if (spec) {
+      const credit = spec.commons
+        ? '<a class="cover-photo-credit" href="https://commons.wikimedia.org/wiki/File:' + encodeURIComponent(spec.commons) + '" target="_blank" rel="noopener noreferrer">NickRewind · CC BY 3.0</a>'
+        : '';
+      return '<img class="ebook-cover-photo original-anime-photo" src="' + spec.url +
+        '" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-original-artwork="' +
+        escapeHtml(product.id) + '" alt="Imagem de ' + escapeHtml(product.title) +
+        '"><span class="ebook-photo-shade" aria-hidden="true"></span>' + credit;
     }
     return '<img class="ebook-cover-photo" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="" src="' +
       premiumPhotoFor(product) + '"><span class="ebook-photo-shade" aria-hidden="true"></span>';
