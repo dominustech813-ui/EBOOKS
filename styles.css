@@ -1756,3 +1756,15 @@ body.auth-locked > .discount-banner{display:none!important}
 .checkout-cover-art:has(img[data-original-artwork^="colecao225-22"]) img{object-fit:contain;object-position:center;padding:16px}
 .cover-photo-credit{position:absolute;bottom:7px;right:9px;font:600 9px/1.2 Inter,sans-serif;color:#fff!important;text-decoration:underline;z-index:4;opacity:.9;text-shadow:0 1px 4px #000}
 .ebook-cover-art-wrap.cover-unavailable::before,.checkout-cover-art.cover-unavailable::before{content:"CAPA INDISPONÍVEL"!important;color:#fff;position:absolute;top:38%;left:12px;right:12px;text-align:center;font:bold 11px Inter,sans-serif;letter-spacing:.07em;z-index:1}
+
+
+/* Correção urgente: a capa nunca deve depender de JS para ficar visível.
+   URLs de imagens podem carregar antes de o evento "load" ser registrado. */
+.ebook-cover-photo.original-anime-photo,
+.ebook-cover-photo.original-anime-photo:not(.is-ready) {
+  opacity: 1 !important;
+  visibility: visible !important;
+  transition: none !important;
+}
+.ebook-cover-photo.original-anime-photo[src] { display: block !important; }
+.ebook-cover-art-wrap:has(.original-anime-photo) { isolation: isolate; }
