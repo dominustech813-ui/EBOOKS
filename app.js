@@ -329,6 +329,7 @@
       checkoutCover.insertBefore(checkoutArt, checkoutCover.firstChild);
     }
     checkoutArt.innerHTML = buildIllustratedCover(product);
+    hydrateOriginalArtwork(checkoutArt, true);
     pixButton.textContent = "Gerar Pix de " + money.format(Number(product.price));
     cardButton.textContent = "Continuar com cartão • " + money.format(Number(product.price));
   }
@@ -574,13 +575,156 @@
     city: "photo-1519501025264-65ba15a82390",
     gaming: "photo-1542751371-adc38448a05e"
   };
+
+  // Imagens verdadeiras de títulos de terceiros, NÃO desenhos gerados por IA.
+  // MAL IDs fixos garantem que cada poster seja da série certa (Jikan/MyAnimeList).
+  const originalArtwork = {
+    "colecao225-201-naruto": { mal: 20, wiki: "Naruto" },
+    "colecao225-202-one-piece": { mal: 21, wiki: "One Piece" },
+    "colecao225-203-dragon-ball": { mal: 223, wiki: "Dragon Ball" },
+    "colecao225-204-demon-slayer": { mal: 38000, wiki: "Demon Slayer: Kimetsu no Yaiba" },
+    "colecao225-205-attack-on-titan": { mal: 16498, wiki: "Attack on Titan" },
+    "colecao225-206-my-hero-academia": { mal: 31964, wiki: "My Hero Academia" },
+    "colecao225-207-jujutsu-kaisen": { mal: 40748, wiki: "Jujutsu Kaisen" },
+    "colecao225-208-spy-x-family": { mal: 50265, wiki: "Spy × Family" },
+    "colecao225-209-pokemon": { mal: 527, wiki: "Pokémon (TV series)" },
+    "colecao225-210-sailor-moon": { mal: 530, wiki: "Sailor Moon" },
+    "colecao225-211-death-note": { mal: 1535, wiki: "Death Note" },
+    "colecao225-212-fullmetal-alchemist-brotherhood": { mal: 5114, wiki: "Fullmetal Alchemist: Brotherhood" },
+    "colecao225-213-haikyuu": { mal: 20583, wiki: "Haikyu!!" },
+    "colecao225-214-hunter-x-hunter": { mal: 11061, wiki: "Hunter × Hunter" },
+    "colecao225-215-bleach": { mal: 269, wiki: "Bleach (TV series)" },
+    "colecao225-216-one-punch-man": { mal: 30276, wiki: "One-Punch Man" },
+    "colecao225-217-tokyo-revengers": { mal: 42249, wiki: "Tokyo Revengers" },
+    "colecao225-218-chainsaw-man": { mal: 44511, wiki: "Chainsaw Man" },
+    "colecao225-219-frieren-beyond-journey-s-end": { mal: 52991, wiki: "Frieren" },
+    "colecao225-220-solo-leveling": { mal: 52299, wiki: "Solo Leveling" },
+    "colecao225-221-bob-esponja": { wiki: "SpongeBob SquarePants (character)" },
+    "colecao225-222-patrick-estrela": { wiki: "Patrick Star" },
+    "colecao225-223-sr-siriguejo": { wiki: "Mr. Krabs" },
+    "colecao225-224-sandy-bochechas": { wiki: "Sandy Cheeks" },
+    "colecao225-225-lula-molusco": { wiki: "Squidward Tentacles" }
+  };
+  const originalArtworkCache = new Map();
+  const originalArtworkPending = new Map();
+  const originalArtworkQueue = [];
+  let originalArtworkRunning = false;
+
+  async function wikipediaArtwork(title) {
+    const params = new URLSearchParams({
+      action: "query", prop: "pageimages", titles: title,
+      piprop: "thumbnail", pithumbsize: "900", pilicense: "any",
+      format: "json", redirects: "1", origin: "*"
+    });
+    const response = await fetch("https://en.wikipedia.org/w/api.php?" + params, {cache:"force-cache"});
+    if (!response.ok) throw new Error("Wikipedia artwork unavailable");
+    const pages = Object.values((await response.json()).query?.pages || {});
+    const url = pages.find(page => page.thumbnail?.source)?.thumbnail?.source || "";
+    return /^https:\/\//.test(url) ? url : "";
+  }
+
+  async function resolveOriginalArtwork(id) {
+    if (originalArtworkCache.has(id)) return originalArtworkCache.get(id);
+    if (originalArtworkPending.has(id)) return originalArtworkPending.get(id);
+    const spec = originalArtwork[id];
+    if (!spec) return "";
+    const pending = (async () => {
+      let url = "";
+      if (spec.mal) {
+        try {
+          const res = await fetch("https://api.jikan.moe/v4/anime/" + spec.mal, {cache:"force-cache"});
+          if (res.ok) {
+            const data = (await res.json()).data || {};
+            url = data.images?.webp?.large_image_url || data.images?.jpg?.large_image_url || "";
+          }
+        } catch (error) {
+          console.warn("Capa anime indisponível:", id, error);
+        }
+      }
+      if (!/^https:\/\//.test(url) && spec.wiki) {
+        try { url = await wikipediaArtwork(spec.wiki); } catch (error) {
+          console.warn("Imagem original indisponível:", id, error);
+        }
+      }
+      if (!/^https:\/\//.test(url)) url = "";
+      originalArtworkCache.set(id, url);
+      return url;
+    })();
+    originalArtworkPending.set(id, pending);
+    try { return await pending; }
+    finally { originalArtworkPending.delete(id); }
+  }
+
+  function showOriginalArtwork(img, url) {
+    if (!img.isConnected || !/^https:\/\//.test(url)) return;
+    img.addEventListener("load", () => img.classList.add("is-ready"), {once:true});
+    img.addEventListener("error", async () => {
+      const spec = originalArtwork[img.dataset.originalArtwork];
+      if (!spec?.wiki || img.dataset.wikiFallback) return;
+      img.dataset.wikiFallback = "1";
+      try {
+        const alternative = await wikipediaArtwork(spec.wiki);
+        if (alternative && alternative !== url && img.isConnected) {
+          showOriginalArtwork(img, alternative);
+        }
+      } catch (e) {
+        console.warn("Não foi possível carregar arte original", e);
+      }
+    }, {once:true});
+    img.src = url;
+  }
+
+  function enqueueOriginalArtwork(img, urgent) {
+    if (img.dataset.artworkQueued) return;
+    img.dataset.artworkQueued = "1";
+    const id = img.dataset.originalArtwork;
+    if (originalArtworkCache.has(id)) {
+      showOriginalArtwork(img, originalArtworkCache.get(id));
+      return;
+    }
+    (urgent ? originalArtworkQueue.unshift : originalArtworkQueue.push).call(originalArtworkQueue, {id, img});
+    runOriginalArtworkQueue();
+  }
+
+  async function runOriginalArtworkQueue() {
+    if (originalArtworkRunning) return;
+    originalArtworkRunning = true;
+    try {
+      while (originalArtworkQueue.length) {
+        const {id, img} = originalArtworkQueue.shift();
+        try { showOriginalArtwork(img, await resolveOriginalArtwork(id)); }
+        catch (e) { console.warn("Falha ao carregar capa:", id, e); }
+        // Respeita limite de requisições das fontes de imagem.
+        await new Promise(resolve => setTimeout(resolve, 550));
+      }
+    } finally { originalArtworkRunning = false; }
+  }
+
+  const artworkObserver = typeof IntersectionObserver !== "undefined"
+    ? new IntersectionObserver(entries => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            artworkObserver.unobserve(entry.target);
+            enqueueOriginalArtwork(entry.target, false);
+          }
+        });
+      }, {rootMargin: "340px"}) : null;
+
+  function hydrateOriginalArtwork(root, urgent = false) {
+    if (!root) return;
+    root.querySelectorAll("img[data-original-artwork]").forEach(img => {
+      if (!urgent && artworkObserver) artworkObserver.observe(img);
+      else enqueueOriginalArtwork(img, true);
+    });
+  }
+
   function premiumPhotoFor(product) {
-    const key = coverKey([product.title,product.subtitle,product.category,product.description].join(" "));
+    const key = coverKey([product.title, product.subtitle, product.category, product.description].join(" "));
     let type = "books";
     if (/hamburg|receita|cozinha|culin|aliment|chocolate|bolo|pizz|comida|gastronom/.test(key)) type="food";
     else if (/viag|turismo|paises|mundo|destino/.test(key)) type="travel";
     else if (/finan|dinheiro|invest|renda|econom|venda|empreend|negocio/.test(key)) type="finance";
-    else if (/inteligencia artificial|\\bia\\b|tecnolog|robot|digital|program|comput|internet|software/.test(key)) type="technology";
+    else if (/inteligencia artificial|\bia\b|tecnolog|robot|digital|program|comput|internet|software/.test(key)) type="technology";
     else if (/estud|escola|educa|aprender|historia|matemat|lingua|ingles|geograf/.test(key)) type="study";
     else if (/saude|medic|nutri|doenca|imun|corpo humano/.test(key)) type="health";
     else if (/esporte|treino|muscul|exercicio|academia|fitness/.test(key)) type="fitness";
@@ -589,14 +733,19 @@
     else if (/musica|instrumento|violao|guitarra/.test(key)) type="music";
     else if (/arte|pintura|desenho|criativ/.test(key)) type="art";
     else if (/animal|cachorro|gato|pet/.test(key)) type="animals";
-    else if (/anime|naruto|one piece|dragon ball|pokemon|demon slayer|attack on titan|sponge|bob esponja|patrick|lula molusco|sandy|sirigueijo|jogo|game/.test(key)) type="gaming";
     else if (/lider|comunic|psicolog|autoconhec|relacionamento/.test(key)) type="portrait";
     else if (/cidade|arquitet|urbano/.test(key)) type="city";
     return "https://images.unsplash.com/" + premiumPhotos[type] + "?auto=format&fit=crop&w=900&q=85";
   }
+
   function buildIllustratedCover(product) {
-    const url = premiumPhotoFor(product);
-    return '<img class="ebook-cover-photo" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="" src="' + url + '"><span class="ebook-photo-shade" aria-hidden="true"></span>';
+    if (Object.prototype.hasOwnProperty.call(originalArtwork, product.id)) {
+      return '<img class="ebook-cover-photo original-anime-photo" loading="lazy" decoding="async" referrerpolicy="no-referrer" data-original-artwork="' +
+        escapeHtml(product.id) + '" alt="Arte original de ' + escapeHtml(product.title) +
+        '"><span class="ebook-photo-shade" aria-hidden="true"></span>';
+    }
+    return '<img class="ebook-cover-photo" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="" src="' +
+      premiumPhotoFor(product) + '"><span class="ebook-photo-shade" aria-hidden="true"></span>';
   }
 
   function populateMobileCatalogCategories() {
@@ -677,6 +826,8 @@
       card.append(cover, body);
       ebookGrid.appendChild(card);
     });
+    if (artworkObserver) artworkObserver.disconnect();
+    hydrateOriginalArtwork(ebookGrid);
   }
 
 
