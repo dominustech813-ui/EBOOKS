@@ -551,161 +551,52 @@
       (extra || "") + '</g>';
   }
 
+  // Fotografias editoriais no catálogo (sem bonecos SVG).
+  // Imagens externas públicas: não são arquivos dos eBooks vendidos.
+  const premiumPhotos = {
+    food: "photo-1568901346375-23c9450c58cd",
+    cooking: "photo-1556911220-bff31c812dba",
+    nature: "photo-1441974231531-c6227db76b6e",
+    travel: "photo-1488646953014-85cb44e25828",
+    finance: "photo-1579621970563-ebec7560ff3e",
+    business: "photo-1460925895917-afdab827c52f",
+    technology: "photo-1518770660439-4636190af475",
+    computer: "photo-1498050108023-c5249f4df085",
+    study: "photo-1497633762265-9d179a990aa6",
+    books: "photo-1507842217343-583bb7270b66",
+    health: "photo-1505751172876-fa1923c5c528",
+    fitness: "photo-1517836357463-d25dfeac3438",
+    meditation: "photo-1544367567-0f2fcb009e0b",
+    music: "photo-1511379938547-c1f69419868d",
+    art: "photo-1513364776144-60967b0f800f",
+    animals: "photo-1457140072488-019a7a0e7a1e",
+    portrait: "photo-1534528741775-53994a69daeb",
+    city: "photo-1519501025264-65ba15a82390",
+    gaming: "photo-1542751371-adc38448a05e"
+  };
+  function premiumPhotoFor(product) {
+    const key = coverKey([product.title,product.subtitle,product.category,product.description].join(" "));
+    let type = "books";
+    if (/hamburg|receita|cozinha|culin|aliment|chocolate|bolo|pizz|comida|gastronom/.test(key)) type="food";
+    else if (/viag|turismo|paises|mundo|destino/.test(key)) type="travel";
+    else if (/finan|dinheiro|invest|renda|econom|venda|empreend|negocio/.test(key)) type="finance";
+    else if (/inteligencia artificial|\\bia\\b|tecnolog|robot|digital|program|comput|internet|software/.test(key)) type="technology";
+    else if (/estud|escola|educa|aprender|historia|matemat|lingua|ingles|geograf/.test(key)) type="study";
+    else if (/saude|medic|nutri|doenca|imun|corpo humano/.test(key)) type="health";
+    else if (/esporte|treino|muscul|exercicio|academia|fitness/.test(key)) type="fitness";
+    else if (/mindfulness|medit|ansiedade|paz interior|bem-estar/.test(key)) type="meditation";
+    else if (/naturez|planta|jardim|floresta|meio ambiente/.test(key)) type="nature";
+    else if (/musica|instrumento|violao|guitarra/.test(key)) type="music";
+    else if (/arte|pintura|desenho|criativ/.test(key)) type="art";
+    else if (/animal|cachorro|gato|pet/.test(key)) type="animals";
+    else if (/anime|naruto|one piece|dragon ball|pokemon|demon slayer|attack on titan|sponge|bob esponja|patrick|lula molusco|sandy|sirigueijo|jogo|game/.test(key)) type="gaming";
+    else if (/lider|comunic|psicolog|autoconhec|relacionamento/.test(key)) type="portrait";
+    else if (/cidade|arquitet|urbano/.test(key)) type="city";
+    return "https://images.unsplash.com/" + premiumPhotos[type] + "?auto=format&fit=crop&w=900&q=85";
+  }
   function buildIllustratedCover(product) {
-    const t = coverKey(product.title);
-    const c = coverKey(product.category);
-    let a="#6847ff", b="#0d1f49", glow="#36d4ff", scene="";
-
-    if (t.includes("naruto")) {
-      a="#ff8a1d"; b="#151b38"; glow="#ffd34e";
-      scene=illustratedPerson("#ffd34e","#f47b20","#111827",
-        '<rect x="-58" y="-45" width="116" height="18" rx="8" fill="#253858"/><rect x="-20" y="-43" width="40" height="14" rx="5" fill="#b9c6d8"/>');
-    } else if (t.includes("one piece")) {
-      a="#e23732"; b="#102b61"; glow="#43c7ff";
-      scene=illustratedPerson("#141414","#d9342b","#f2c84b",
-        '<ellipse cx="0" cy="-55" rx="72" ry="18" fill="#e3b447"/><rect x="-64" y="-62" width="128" height="12" rx="5" fill="#cb3530"/>');
-    } else if (t.includes("dragon ball")) {
-      a="#f28b1a"; b="#172557"; glow="#ffe34f";
-      scene=illustratedPerson("#ffd52d","#f1761a","#2b55d4",
-        '<path d="M-95 10 Q0 -70 95 10" stroke="#ffe93d" stroke-width="12" opacity=".7" fill="none"/>');
-    } else if (t.includes("demon slayer")) {
-      a="#163c48"; b="#111521"; glow="#34d399";
-      scene=illustratedPerson("#4b171b","#173e32","#44d19e",
-        '<g opacity=".9"><rect x="-75" y="52" width="150" height="16" fill="#39b883"/><rect x="-75" y="84" width="150" height="16" fill="#39b883"/></g><path d="M82 85 L130 -28" stroke="#dcecff" stroke-width="8"/>');
-    } else if (t.includes("attack on titan")) {
-      a="#485c4e"; b="#1b2027"; glow="#d7b26a";
-      scene=illustratedPerson("#171717","#3f5b46","#c8a766",
-        '<path d="M-155 148 H155 M-145 118 H145 M-130 88 H130" stroke="#c9a973" stroke-width="10" opacity=".55"/>');
-    } else if (t.includes("jujutsu")) {
-      a="#6427b8"; b="#12162b"; glow="#b36bff";
-      scene=illustratedPerson("#f3f5ff","#16172c","#8c5bff",
-        '<rect x="-58" y="-20" width="116" height="25" rx="10" fill="#121320"/>');
-    } else if (t.includes("my hero")) {
-      a="#138966"; b="#102a35"; glow="#62f6c3";
-      scene=illustratedPerson("#1e6b54","#124e3d","#f2f5f7",
-        '<path d="M-62 70 L0 115 L62 70" stroke="#e8f3f7" stroke-width="10" fill="none"/>');
-    } else if (t.includes("spy x family")) {
-      a="#d3a6a0"; b="#18342c"; glow="#ffd6ca";
-      scene='<g transform="translate(210 112)">' +
-        illustratedPerson("#d6bf9a","#202d29","#d6b15d",'') +
-        '<g transform="translate(-86 52) scale(.62)">' + illustratedPerson("#222","#1b2c28","#ccb26d",'') + '</g>' +
-        '<g transform="translate(90 58) scale(.55)">' + illustratedPerson("#f3a9b8","#151f2a","#eec4d0",'') + '</g></g>';
-    } else if (t.includes("pokemon")) {
-      a="#1a73d9"; b="#17295c"; glow="#ffe33b";
-      scene='<g transform="translate(210 118)"><ellipse cx="0" cy="112" rx="90" ry="25" fill="#000" opacity=".18"/>' +
-        '<ellipse cx="0" cy="30" rx="78" ry="72" fill="#ffd934"/><path d="M-48 -25 L-76 -112 L-26 -48Z" fill="#ffd934"/><path d="M48 -25 L76 -112 L26 -48Z" fill="#ffd934"/>' +
-        '<circle cx="-27" cy="18" r="8" fill="#141414"/><circle cx="27" cy="18" r="8" fill="#141414"/><circle cx="-50" cy="48" r="15" fill="#ef3b3b"/><circle cx="50" cy="48" r="15" fill="#ef3b3b"/>' +
-        '<path d="M-18 58 Q0 72 18 58" stroke="#7b4b12" stroke-width="5" fill="none"/></g>';
-    } else if (t.includes("death note")) {
-      a="#311c39"; b="#0b0b12"; glow="#d94052";
-      scene=illustratedPerson("#15151d","#1a1b22","#cf3948",
-        '<rect x="62" y="35" width="70" height="92" rx="5" fill="#09090c"/><circle cx="-105" cy="70" r="26" fill="#c82837"/>');
-    } else if (t.includes("fullmetal")) {
-      a="#b6222a"; b="#34201d"; glow="#f0c36a";
-      scene=illustratedPerson("#f2c55b","#a91f2d","#333",
-        '<path d="M58 34 L126 130" stroke="#cbd2d9" stroke-width="16"/><circle cx="126" cy="130" r="18" fill="#9ca8b4"/>');
-    } else if (t.includes("haikyuu")) {
-      a="#f47c20"; b="#172236"; glow="#ffb14b";
-      scene=illustratedPerson("#f07a20","#171b25","#f48b23",
-        '<circle cx="108" cy="35" r="34" fill="#f6f6f2"/><path d="M85 18 L132 52 M132 18 L85 52" stroke="#3a3a3a" stroke-width="4"/>');
-    } else if (t.includes("hunter x hunter")) {
-      a="#21966a"; b="#17312e"; glow="#60f0a5";
-      scene=illustratedPerson("#153f2f","#2f9d69","#e54d43",
-        '<path d="M-62 64 L0 102 L62 64" stroke="#e34f43" stroke-width="10" fill="none"/>');
-    } else if (t.includes("bleach")) {
-      a="#ec7c2b"; b="#16191f"; glow="#ffd1a0";
-      scene=illustratedPerson("#ed7f28","#111318","#d9e6ef",
-        '<path d="M74 100 L132 -35" stroke="#e8edf0" stroke-width="9"/>');
-    } else if (t.includes("one punch")) {
-      a="#f0c928"; b="#a51f2b"; glow="#fff06a";
-      scene=illustratedPerson("#f2cfae","#e8c72c","#c92735",
-        '<path d="M-58 -48 Q0 -70 58 -48" fill="#f2cfae"/><circle cx="-105" cy="65" r="24" fill="#c92735"/><circle cx="105" cy="65" r="24" fill="#c92735"/>');
-    } else if (t.includes("tokyo revengers")) {
-      a="#d6b950"; b="#12141d"; glow="#f3df7a";
-      scene=illustratedPerson("#e7c44f","#101218","#d9b84d",
-        '<path d="M-55 44 H55 M-45 72 H45" stroke="#d0ae4c" stroke-width="5"/>');
-    } else if (t.includes("chainsaw")) {
-      a="#ea6a2c"; b="#16161a"; glow="#ff9d50";
-      scene='<g transform="translate(210 118)"><path d="M-70 150 L-55 25 L-15 -35 L45 -25 L72 25 L62 150Z" fill="#212229"/>' +
-        '<path d="M-42 -18 L72 -70 L88 -50 L-18 15Z" fill="#ef6d2f"/><path d="M-20 -38 L-5 -95 L16 -85 L8 -25Z" fill="#ef6d2f"/>' +
-        '<circle cx="-12" cy="-10" r="8" fill="#ffd34d"/><circle cx="28" cy="-17" r="8" fill="#ffd34d"/></g>';
-    } else if (t.includes("frieren")) {
-      a="#83a8cf"; b="#24304b"; glow="#dcecff";
-      scene=illustratedPerson("#eef2f7","#eff2f7","#8bb4d9",
-        '<path d="M-58 -8 L-102 -28 L-62 18Z" fill="#f1c29d"/><path d="M58 -8 L102 -28 L62 18Z" fill="#f1c29d"/>');
-    } else if (t.includes("solo leveling")) {
-      a="#2c4cd7"; b="#0d1025"; glow="#637cff";
-      scene=illustratedPerson("#10121c","#121629","#596cff",
-        '<path d="M-110 110 Q-155 18 -100 -72 M110 110 Q155 18 100 -72" stroke="#5a71ff" stroke-width="10" opacity=".7" fill="none"/>');
-    } else if (t.includes("bob esponja")) {
-      a="#19aee7"; b="#075f8a"; glow="#ffe43c";
-      scene='<g transform="translate(210 115)"><rect x="-78" y="-55" width="156" height="170" rx="28" fill="#f9df32"/>' +
-        '<circle cx="-28" cy="-8" r="30" fill="#fff"/><circle cx="28" cy="-8" r="30" fill="#fff"/><circle cx="-28" cy="-8" r="10" fill="#2698d3"/><circle cx="28" cy="-8" r="10" fill="#2698d3"/>' +
-        '<path d="M-42 44 Q0 78 42 44" stroke="#8f4a28" stroke-width="6" fill="#fff"/><rect x="-35" y="70" width="70" height="30" fill="#f4f4ec"/></g>';
-    } else if (t.includes("patrick")) {
-      a="#ef7c91"; b="#153e72"; glow="#ffb0bd";
-      scene='<g transform="translate(210 125)"><path d="M0 -105 L38 -18 L120 -35 L58 30 L92 120 L0 72 L-92 120 L-58 30 L-120 -35 L-38 -18Z" fill="#f58da0"/>' +
-        '<circle cx="-24" cy="-18" r="8" fill="#111"/><circle cx="24" cy="-18" r="8" fill="#111"/><path d="M-25 20 Q0 38 25 20" stroke="#8c3d55" stroke-width="5" fill="none"/></g>';
-    } else if (t.includes("siriguejo")) {
-      a="#d74c31"; b="#126b80"; glow="#ff9b67";
-      scene='<g transform="translate(210 125)"><ellipse cx="0" cy="35" rx="70" ry="90" fill="#d94731"/><path d="M-58 25 L-130 -20 M58 25 L130 -20" stroke="#d94731" stroke-width="20"/>' +
-        '<circle cx="-20" cy="-45" r="18" fill="#fff"/><circle cx="20" cy="-45" r="18" fill="#fff"/><circle cx="-20" cy="-45" r="6" fill="#111"/><circle cx="20" cy="-45" r="6" fill="#111"/></g>';
-    } else if (t.includes("sandy")) {
-      a="#3d9ed0"; b="#143257"; glow="#edf9ff";
-      scene='<g transform="translate(210 118)"><circle cx="0" cy="-4" r="92" fill="#eef8ff" stroke="#bde7f7" stroke-width="9"/><circle cx="0" cy="5" r="54" fill="#a96b38"/>' +
-        '<circle cx="-40" cy="-42" r="22" fill="#a96b38"/><circle cx="40" cy="-42" r="22" fill="#a96b38"/><circle cx="-18" cy="0" r="6"/><circle cx="18" cy="0" r="6"/>' +
-        '<path d="M-18 28 Q0 42 18 28" stroke="#512c20" stroke-width="5" fill="none"/><path d="M-42 100 L42 100 L62 170 L-62 170Z" fill="#f0f1ee"/></g>';
-    } else if (t.includes("lula molusco")) {
-      a="#2d9b9f"; b="#12445c"; glow="#83d5cf";
-      scene='<g transform="translate(210 118)"><ellipse cx="0" cy="-15" rx="62" ry="78" fill="#71b9ad"/><path d="M-40 45 L-58 150 M-15 52 L-20 158 M15 52 L20 158 M40 45 L58 150" stroke="#71b9ad" stroke-width="16"/>' +
-        '<circle cx="-23" cy="-15" r="12" fill="#f3e5a7"/><circle cx="23" cy="-15" r="12" fill="#f3e5a7"/><path d="M-22 30 H22" stroke="#465c58" stroke-width="5"/></g>';
-    } else {
-      if (c.includes("pets")) {
-        a="#aa7655"; b="#283441"; glow="#ffd2a8";
-        scene='<g transform="translate(210 122)"><circle cx="-55" cy="15" r="62" fill="#d69a68"/><path d="M-105 -10 L-85 -80 L-48 -38Z" fill="#bd7a49"/><path d="M-5 -10 L-25 -80 L-62 -38Z" fill="#bd7a49"/><circle cx="-75" cy="8" r="7"/><circle cx="-35" cy="8" r="7"/><ellipse cx="-55" cy="34" rx="12" ry="9" fill="#222"/>' +
-        '<circle cx="62" cy="18" r="58" fill="#c8c6c4"/><path d="M25 -15 L40 -70 L70 -38Z" fill="#9f9d9a"/><path d="M99 -15 L85 -70 L55 -38Z" fill="#9f9d9a"/><circle cx="45" cy="12" r="7"/><circle cx="78" cy="12" r="7"/></g>';
-      } else if (c.includes("culin") || c.includes("aliment")) {
-        a="#e56b32"; b="#4d2230"; glow="#ffcf63";
-        scene='<g transform="translate(210 125)"><ellipse cx="0" cy="32" rx="126" ry="66" fill="#f3f0e9"/><ellipse cx="0" cy="28" rx="92" ry="42" fill="#da6c3f"/><circle cx="-28" cy="15" r="24" fill="#f5d24a"/><circle cx="28" cy="15" r="24" fill="#61a94a"/><path d="M-120 -15 L-150 120 M120 -15 L150 120" stroke="#d9dfe5" stroke-width="12"/></g>';
-      } else if (c.includes("program") || c.includes("tecnologia") || c.includes("inteligencia artificial") || c.includes("ia e trabalho")) {
-        a="#1674d1"; b="#111d3d"; glow="#49e5ff";
-        scene='<g transform="translate(210 125)"><rect x="-125" y="-75" width="250" height="150" rx="16" fill="#17263f" stroke="#44d9ff" stroke-width="5"/><rect x="-105" y="-55" width="210" height="110" fill="#0a1325"/><path d="M-55 -20 L-85 0 L-55 20 M55 -20 L85 0 L55 20 M18 -34 L-18 34" stroke="#45e5ff" stroke-width="8" fill="none"/><path d="M-145 92 H145" stroke="#9ba9bd" stroke-width="18"/></g>';
-      } else if (c.includes("finan") || c.includes("negocio") || c.includes("carreira")) {
-        a="#138c68"; b="#11302b"; glow="#64efb6";
-        scene='<g transform="translate(210 130)"><rect x="-128" y="-70" width="256" height="155" rx="18" fill="#0d2826"/><path d="M-100 55 L-45 10 L0 28 L70 -50 L112 -72" stroke="#67efb3" stroke-width="12" fill="none"/><path d="M-100 55 V75 M-45 10 V75 M0 28 V75 M70 -50 V75 M112 -72 V75" stroke="#316d60" stroke-width="8"/><circle cx="94" cy="-66" r="28" fill="#f1c84b"/></g>';
-      } else if (c.includes("fotografia") || c.includes("video")) {
-        a="#3450a1"; b="#151c34"; glow="#8db7ff";
-        scene='<g transform="translate(210 125)"><rect x="-130" y="-70" width="260" height="155" rx="28" fill="#20283b"/><circle cx="0" cy="8" r="62" fill="#0d1220" stroke="#7d9bd0" stroke-width="15"/><circle cx="0" cy="8" r="28" fill="#2b73ad"/><rect x="-75" y="-103" width="92" height="40" rx="10" fill="#303a51"/></g>';
-      } else if (c.includes("musica")) {
-        a="#b15725"; b="#2b1721"; glow="#ffb858";
-        scene='<g transform="translate(210 122)"><path d="M-80 -75 C-20 -45 30 25 45 115" stroke="#d79a45" stroke-width="34" fill="none"/><ellipse cx="-72" cy="-72" rx="45" ry="62" fill="#bc6a2f"/><circle cx="-62" cy="-65" r="22" fill="#2b1721"/><path d="M58 -80 V70 Q20 50 20 88 Q20 126 60 112 Q86 102 86 75 V-95" stroke="#f5d5a0" stroke-width="14" fill="none"/></g>';
-      } else if (c.includes("jardin") || c.includes("sustent")) {
-        a="#379650"; b="#14372c"; glow="#8af29d";
-        scene='<g transform="translate(210 130)"><path d="M0 105 V-45" stroke="#83d48a" stroke-width="16"/><ellipse cx="-55" cy="-20" rx="62" ry="28" transform="rotate(-28 -55 -20)" fill="#55b866"/><ellipse cx="55" cy="-50" rx="62" ry="28" transform="rotate(28 55 -50)" fill="#6acb70"/><ellipse cx="-42" cy="48" rx="55" ry="24" transform="rotate(-25 -42 48)" fill="#4ba85d"/><ellipse cx="48" cy="30" rx="55" ry="24" transform="rotate(25 48 30)" fill="#74d47a"/><ellipse cx="0" cy="125" rx="105" ry="28" fill="#5c3e2d"/></g>';
-      } else if (c.includes("viagem") || c.includes("geografia") || c.includes("historia")) {
-        a="#2876aa"; b="#18304d"; glow="#72d8ff";
-        scene='<g transform="translate(210 122)"><circle cx="-18" cy="12" r="92" fill="#3c9dd0"/><path d="M-78 -20 Q-35 -70 10 -35 Q45 -10 35 32 Q0 70 -60 45Z" fill="#55ad68"/><path d="M45 -70 L145 -118 L76 -20 L135 5 L45 24 L18 95 L-8 18Z" fill="#e9f2f8"/></g>';
-      } else if (c.includes("ciencias") || c.includes("matematica") || c.includes("educacao") || c.includes("idiomas")) {
-        a="#2774c8"; b="#25245b"; glow="#67d9ff";
-        scene='<g transform="translate(210 124)"><path d="M-125 -75 Q-55 -110 0 -60 V110 Q-58 72 -125 95Z" fill="#f0f4ff"/><path d="M125 -75 Q55 -110 0 -60 V110 Q58 72 125 95Z" fill="#e4ebff"/><circle cx="72" cy="-5" r="42" fill="#38a7d3"/><path d="M72 -55 V45 M22 -5 H122" stroke="#d8f5ff" stroke-width="5"/><path d="M-96 -25 H-25 M-96 5 H-35 M-96 35 H-18" stroke="#596b8e" stroke-width="8"/></g>';
-      } else if (c.includes("artesanato") || c.includes("design") || c.includes("cultura")) {
-        a="#a84d91"; b="#342040"; glow="#ff91d5";
-        scene='<g transform="translate(210 122)"><circle cx="-70" cy="0" r="72" fill="#e4569e"/><circle cx="-70" cy="0" r="48" fill="#ca4687"/><path d="M-12 -80 L104 90 M18 -100 L134 70" stroke="#f2e8f0" stroke-width="10"/><circle cx="66" cy="-35" r="34" fill="#45b9d4"/><circle cx="110" cy="25" r="25" fill="#f2c84e"/></g>';
-      } else if (c.includes("saude") || c.includes("bem-estar")) {
-        a="#149da0"; b="#16334d"; glow="#70f0df";
-        scene='<g transform="translate(210 122)"><path d="M0 110 C-135 20 -120 -80 -45 -75 C-5 -72 0 -35 0 -35 C0 -35 8 -75 50 -75 C125 -75 138 25 0 110Z" fill="#e94d62"/><path d="M-125 20 H-62 L-38 -30 L-5 68 L28 -10 L52 20 H125" stroke="#d8fff8" stroke-width="9" fill="none"/></g>';
-      } else {
-        a="#6547d9"; b="#19204c"; glow="#55d5ff";
-        scene='<g transform="translate(210 125)"><circle cx="0" cy="0" r="105" fill="#ffffff" opacity=".12"/><path d="M-95 65 L-20 -65 L45 15 L105 -90" stroke="#69ddff" stroke-width="18" fill="none"/><circle cx="-85" cy="-45" r="28" fill="#ffcb57"/><circle cx="88" cy="52" r="35" fill="#ff6fa7"/></g>';
-      }
-    }
-
-    return '<svg class="ebook-cover-art" viewBox="0 0 420 300" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">' +
-      '<defs><linearGradient id="bg" x1="0" y1="0" x2="1" y2="1"><stop stop-color="' + a + '"/><stop offset="1" stop-color="' + b + '"/></linearGradient>' +
-      '<radialGradient id="glow" cx=".75" cy=".18" r=".8"><stop stop-color="' + glow + '" stop-opacity=".55"/><stop offset="1" stop-color="' + glow + '" stop-opacity="0"/></radialGradient></defs>' +
-      '<rect width="420" height="300" fill="url(#bg)"/><rect width="420" height="300" fill="url(#glow)"/>' +
-      '<circle cx="40" cy="35" r="4" fill="#fff" opacity=".65"/><circle cx="365" cy="65" r="3" fill="#fff" opacity=".5"/><circle cx="340" cy="235" r="5" fill="#fff" opacity=".28"/>' +
-      scene + '</svg>';
+    const url = premiumPhotoFor(product);
+    return '<img class="ebook-cover-photo" loading="lazy" decoding="async" referrerpolicy="no-referrer" alt="" src="' + url + '"><span class="ebook-photo-shade" aria-hidden="true"></span>';
   }
 
   function populateMobileCatalogCategories() {
