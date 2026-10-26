@@ -1696,3 +1696,27 @@ body.auth-locked > .discount-banner{display:none!important}
   .discord-support-qr{max-width:220px;margin:0 auto}
   .discord-support-pix-actions{flex-direction:column}
 }
+
+/* Previews and verified reader reviews */
+.reader-actions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.reader-actions button{flex:1;min-height:44px;box-shadow:none}
+.reader-dialog{width:min(760px,calc(100% - 24px));max-height:90dvh;border:1px solid var(--line);border-radius:24px;padding:26px;color:var(--ink);background:var(--surface);box-shadow:var(--shadow);overflow:auto}
+.reader-dialog::backdrop{background:rgba(16,14,29,.78)}
+.reader-heading{display:flex;justify-content:space-between;align-items:center;gap:16px}
+.reader-heading .eyebrow{margin:0}
+.reader-close{flex-shrink:0;width:44px;height:44px;border:0;border-radius:50%;font-size:28px;cursor:pointer}
+.reader-dialog h2{font-family:Manrope,sans-serif;font-size:28px;line-height:1.2;margin:18px 0 12px}
+.reader-description,.reader-status,.reader-review-form>p{color:var(--muted);font-size:14px}
+.reader-content iframe{display:block;width:100%;height:52dvh;border:1px solid var(--line);border-radius:12px;margin-top:14px}
+.reader-buy{width:100%;margin-top:20px;min-height:48px}
+.reader-error{color:#a51f34}
+.reader-review{padding:18px 0;border-bottom:1px solid var(--line);overflow-wrap:anywhere}
+.reader-review strong,.reader-review small{display:block}
+.reader-review small{color:#167249}
+.reader-review p{white-space:pre-wrap;margin:10px 0}
+.reader-stars{color:#986000;letter-spacing:3px}
+.reader-review-form label{display:block;font-size:14px;font-weight:700;margin:14px 0}
+.reader-review-form select,.reader-review-form textarea{display:block;width:100%;font:inherit;margin-top:7px;border:1px solid var(--line);border-radius:12px;padding:12px;background:#fff;color:var(--ink)}
+.reader-review-form textarea{resize:vertical}
+.reader-dialog :focus-visible{outline:3px solid var(--brand);outline-offset:3px}
+@media(max-width:640px){.reader-dialog{padding:18px}.reader-dialog h2{font-size:24px}.reader-review-form input,.reader-review-form select,.reader-review-form textarea{font-size:16px}}

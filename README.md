@@ -119,3 +119,32 @@ Neste modelo, o pagamento Pix é processado pela conta Asaas conectada à API. O
 - Subir o PDF no bucket privado.
 - Testar uma compra no Sandbox.
 - Revisar dados legais, contato, política de privacidade e política de reembolso.
+
+## Reader experience (2026-10-26)
+
+The catalog now offers **Ler amostra** and **Avaliações**. `reader-experience.js`
+uses the existing Supabase session and calls `reader-experience`.
+
+- The server builds a new PDF containing at most the first 3 pages, always
+  keeping at least one page private. Single-page books have no sample.
+- Source PDFs stay in the private `ebooks` bucket. Samples require login.
+- Reviews require a matching `mercadopago_orders.user_id`, non-null
+  `approved_at`, and status `approved` or `processed`. Local storage does not
+  authorize reviews. Each user can update one review per book.
+- Public responses include nickname/comment/rating/date, never user IDs or emails.
+- `supabase/schema/reader-reviews.sql` records the applied schema. Direct access
+  by `anon` and `authenticated` is revoked; the service function checks identity.
+- Bundles with discounts are **not implemented** in this release. They require
+  server-side multi-item pricing, payment reconciliation and per-book delivery.
+
+Validation: seven server tests passed; syntax and diff checks passed; production
+endpoint returned 401 for an unauthenticated sample request; RLS/grants verified.
+Browser testing remains pending: this environment could not download Chromium.
+No real payment or authenticated production review was created during validation.
+
+Tests require Node 24, `pdf-lib@1.17.1`, and Playwright for the UI test:
+
+```
+node --test tests/reader-experience.cjs
+node tests/reader-ui.cjs
+```
