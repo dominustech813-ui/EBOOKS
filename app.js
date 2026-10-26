@@ -609,40 +609,65 @@
     "colecao225-225-lula-molusco": { url: "https://upload.wikimedia.org/wikipedia/commons/e/e1/Squidward_Tentacles_character.png", commons: "Squidward_Tentacles_character.png" }
   };
 
+  // Nunca ocultar imagens por ausência do marcador "is-ready".
+  // Exibir a imagem diretamente e tentar fontes alternativas somente após erro real.
+  const alternateCoverResults = new Map();
+  async function alternativeCoverUrl(spec, img) {
+    if (!spec?.mal) return "";
+    const id = String(spec.mal);
+    if (alternateCoverResults.has(id)) return alternateCoverResults.get(id);
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 7000);
+      let res;
+      try {
+        res = await fetch("https://api.jikan.moe/v4/anime/" + encodeURIComponent(id), {
+          signal: controller.signal, cache: "force-cache"
+        });
+      } finally {
+        clearTimeout(timeout);
+      }
+      if (!res.ok) return "";
+      const data = (await res.json()).data || {};
+      const alt = data.images?.jpg?.large_image_url ||
+        data.images?.jpg?.image_url || data.images?.webp?.large_image_url || "";
+      if (/^https:\/\//.test(alt)) {
+        alternateCoverResults.set(id, alt);
+        return alt;
+      }
+    } catch (error) {
+      console.warn("Fonte alternativa de imagem indisponível", id, error);
+    }
+    return "";
+  }
+
   function hydrateOriginalArtwork(root) {
     if (!root) return;
     root.querySelectorAll('img[data-original-artwork]').forEach(img => {
       const spec = originalArtwork[img.dataset.originalArtwork];
       if (!spec || img.dataset.coverBound) return;
       img.dataset.coverBound = "1";
-      const onImageError = async () => {
-        if (!img.isConnected) return;
-        // Imagens de personagens têm endereço direto estático verificado no Wikimedia.
-        // Para animes, só consulta a fonte reserva se o link direto falhar.
-        if (spec.mal && img.dataset.fallbackTried !== "1") {
-          img.dataset.fallbackTried = "1";
-          try {
-            const res = await fetch("https://api.jikan.moe/v4/anime/" + spec.mal);
-            if (res.ok) {
-              const data = (await res.json()).data || {};
-              const replacement = data.images?.jpg?.large_image_url || data.images?.webp?.large_image_url;
-              if (replacement && replacement !== img.src && img.isConnected) {
-                img.src = replacement;
-                return;
-              }
-            }
-          } catch (error) { console.warn("Capa reserva indisponível:", error); }
+      // A carga pode terminar antes do evento ser instalado. A imagem, porém, nunca fica oculta.
+      img.addEventListener("load", () => {
+        img.classList.add("is-ready");
+        img.parentElement?.classList.remove("cover-unavailable");
+      });
+      img.addEventListener("error", async () => {
+        if (!img.isConnected || img.dataset.fallbackTried) {
+          img.parentElement?.classList.add("cover-unavailable");
+          return;
         }
-        img.removeAttribute("src");
-        img.style.display = "none"; // Não mostra ícone quebrado nem texto alternativo.
-        img.parentElement?.classList.add("cover-unavailable");
-      };
-      img.addEventListener("error", onImageError);
-      img.addEventListener("load", () => img.classList.add("is-ready"));
-      if (img.complete) {
-        if (img.naturalWidth > 0) img.classList.add("is-ready");
-        else onImageError();
-      }
+        img.dataset.fallbackTried = "1";
+        const alt = await alternativeCoverUrl(spec, img);
+        if (alt && img.isConnected && alt !== img.src) {
+          img.src = alt;
+        } else {
+          img.parentElement?.classList.add("cover-unavailable");
+        }
+      });
+      if (img.complete && img.naturalWidth > 0) img.classList.add("is-ready");
+      // Nunca tratar img.complete com naturalWidth=0 como falha de carregamento:
+      // imagens lazy ainda podem não ter iniciado o download.
     });
   }
 
