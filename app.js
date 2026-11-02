@@ -222,7 +222,7 @@
 
   async function completeGateLogin(email, password) {
     const { data, error } = await sb.auth.signInWithPassword({ email, password });
-    if (error || !data?.session) throw new Error("E-mail ou senha inválidos.");
+    if (error || !data?.session) throw new Error("Não foi possível entrar. Confira a senha desta conta. A mudança de domínio não altera sua senha.");
     await unlockSite(data.session);
   }
 
@@ -1295,7 +1295,13 @@
       await accountApi("register", { email, password }, false);
       await completeGateLogin(email, password);
     } catch (error) {
-      gateMessage.textContent = error.message || "Não foi possível criar sua conta.";
+      if (error.status === 409) {
+        switchGateTab("login");
+        gateLoginEmail.value = gateRegisterEmail.value.trim().toLowerCase();
+        gateMessage.textContent = "Esta conta já existe. Entre com a senha usada anteriormente.";
+      } else {
+        gateMessage.textContent = error.message || "Não foi possível criar sua conta.";
+      }
       gateMessage.classList.add("error");
     } finally {
       gateRegisterButton.disabled = false;
