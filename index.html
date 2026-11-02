@@ -693,6 +693,45 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js?v=202610220835"></script>
   <script src="reader-experience.js?v=20261026"></script>
-  <script src="app.js?v=20261102-recovery-v2"></script>
+  <script src="app.js?v=20261102-recovery-v3"></script>
+  <script>
+  // Recuperação independente: funciona mesmo se o catálogo/app falhar ao iniciar.
+  (() => {
+    const button = document.getElementById("gate-password-reset");
+    const message = document.getElementById("gate-message");
+    const loginEmail = document.getElementById("gate-login-email");
+    const registerEmail = document.getElementById("gate-register-email");
+    if (!button || !message) return;
+    button.addEventListener("click", async () => {
+      const email = (loginEmail?.value.trim() || registerEmail?.value.trim() || "").toLowerCase();
+      message.classList.remove("error");
+      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+        message.textContent = "Digite um e-mail válido no campo acima e clique novamente em Esqueci minha senha.";
+        message.classList.add("error");
+        return;
+      }
+      button.disabled = true;
+      message.textContent = "Enviando link de recuperação...";
+      try {
+        const cfg = window.HEBOOKS_CONFIG;
+        if (!cfg?.supabaseUrl || !cfg?.supabasePublishableKey) throw new Error("Configuração de autenticação indisponível.");
+        const response = await fetch(cfg.supabaseUrl + "/auth/v1/recover", {
+          method: "POST",
+          headers: { "Content-Type": "application/json", "apikey": cfg.supabasePublishableKey },
+          body: JSON.stringify({ email, redirect_to: "https://lojahebooks.com.br/" })
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(data.msg || data.error_description || data.message || "Falha ao solicitar recuperação.");
+        message.textContent = "Solicitação enviada! Confira seu e-mail e a pasta de spam.";
+      } catch (error) {
+        message.textContent = error.message || "Falha ao enviar recuperação.";
+        message.classList.add("error");
+      } finally {
+        button.disabled = false;
+      }
+    });
+  })();
+  </script>
+
 </body>
 </html>
