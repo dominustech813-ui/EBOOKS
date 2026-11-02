@@ -1330,7 +1330,7 @@
     gateGithubButton.addEventListener("click", async () => {
       const { error } = await sb.auth.signInWithOAuth({
         provider: "github",
-        options: { redirectTo: "https://dominustech813-ui.github.io/EBOOKS/" }
+        options: { redirectTo: "https://lojahebooks.com.br/" }
       });
       if (error) {
         gateMessage.textContent = error.message || "Não foi possível entrar com GitHub.";
@@ -1396,7 +1396,7 @@
     githubButton.addEventListener("click", async () => {
       const { error } = await sb.auth.signInWithOAuth({
         provider: "github",
-        options: { redirectTo: "https://dominustech813-ui.github.io/EBOOKS/" }
+        options: { redirectTo: "https://lojahebooks.com.br/" }
       });
       if (error) {
         authMessage.textContent = error.message || "Não foi possível entrar com GitHub.";
