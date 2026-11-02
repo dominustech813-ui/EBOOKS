@@ -1278,26 +1278,6 @@
     cardStatus.textContent = "Pagamento ainda não confirmado. Aguarde alguns instantes e tente novamente.";
   }
 
-  document.getElementById("gate-password-reset")?.addEventListener("click", async () => {
-    const email = (gateLoginEmail.value || gateRegisterEmail.value || "").trim().toLowerCase();
-    if (!email) {
-      switchGateTab("login");
-      gateMessage.textContent = "Informe seu e-mail no campo acima para recuperar a senha.";
-      return;
-    }
-    gateMessage.classList.remove("error");
-    try {
-      const { error } = await sb.auth.resetPasswordForEmail(email, {
-        redirectTo: "https://lojahebooks.com.br/"
-      });
-      if (error) throw error;
-      gateMessage.textContent = "Se o endereço estiver cadastrado, você receberá um e-mail para redefinir a senha. Confira também o spam.";
-    } catch (error) {
-      gateMessage.textContent = error.message || "Não foi possível enviar o link de recuperação.";
-      gateMessage.classList.add("error");
-    }
-  });
-
   sb.auth.onAuthStateChange((event, session) => {
     if (event !== "PASSWORD_RECOVERY" || !session) return;
     window.setTimeout(async () => {
