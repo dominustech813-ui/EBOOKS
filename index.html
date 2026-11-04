@@ -571,13 +571,13 @@
             <button class="btn btn-large full btn-pix" id="generate-pix" type="submit">Gerar Pix</button>
           </form>
 
+          <p class="form-message" id="payment-status" role="status" aria-live="polite"></p>
           <div id="pix-area" class="hidden">
             <div class="qr-wrap"><img id="pix-image" alt="QR Code Pix Mercado Pago"></div>
             <div class="pix-copy-area">
               <label>Pix Copia e Cola<input id="pix-code" readonly /></label>
               <button class="btn btn-ghost full" id="copy-pix" type="button">Copiar código Pix</button>
             </div>
-            <p class="form-message" id="payment-status" role="status">Pix gerado. Aguardando o pagamento...</p>
             <button class="btn btn-large full" id="check-status" type="button">Já paguei • verificar agora</button>
           </div>
         </div>
@@ -697,10 +697,10 @@
   </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
-  <script src="config.js?v=20261104-guest-access-v7"></script>
-  <script src="auth.js?v=20261104-guest-access-v7"></script>
-  <script src="reader-experience.js?v=20261104-guest-access-v7"></script>
-  <script src="app.js?v=20261104-guest-access-v7"></script>
+  <script src="config.js?v=20261104-checkout-v8"></script>
+  <script src="auth.js?v=20261104-checkout-v8"></script>
+  <script src="reader-experience.js?v=20261104-checkout-v8"></script>
+  <script src="app.js?v=20261104-checkout-v8"></script>
 
 
 </body>

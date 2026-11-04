@@ -349,18 +349,29 @@
   methodCard.addEventListener("click", () => selectMethod("card"));
 
   async function api(url, payload) {
-    const response = await fetch(url, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify(payload)
-    });
-    const data = await response.json().catch(() => ({}));
-    if (!response.ok) {
-      const error = new Error(data.error || "Não foi possível concluir esta operação.");
-      error.status = response.status;
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), 30000);
+    try {
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+        signal: controller.signal
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok || data.ok === false) {
+        const error = new Error(data.error || "Não foi possível concluir esta operação.");
+        error.status = response.status;
+        throw error;
+      }
+      return data;
+    } catch (error) {
+      if (error.name === "AbortError") throw new Error("O serviço de pagamento demorou para responder. Aguarde alguns instantes antes de tentar novamente.");
+      if (error instanceof TypeError) throw new Error("Não foi possível conectar ao serviço de pagamento. Confira sua conexão e tente novamente.");
       throw error;
+    } finally {
+      clearTimeout(timer);
     }
-    return data;
   }
 
   async function catalogApi() {
@@ -1102,7 +1113,11 @@
     cardEmail.readOnly = false;
 
     pixArea.classList.add("hidden");
-    paymentStatus.textContent = "Aguardando pagamento...";
+    paymentStatus.textContent = "";
+    paymentStatus.classList.remove("error");
+    cardStatus.classList.remove("error");
+    pixButton.disabled = false;
+    cardButton.disabled = false;
     cardStatus.textContent = "";
     applyProductToCheckout(product);
     selectMethod("pix");
@@ -1116,7 +1131,8 @@
 
     pixButton.disabled = true;
     pixButton.textContent = "Gerando Pix...";
-    paymentStatus.textContent = "";
+    paymentStatus.textContent = "Conectando ao Mercado Pago para gerar o Pix...";
+    paymentStatus.classList.remove("error");
 
     try {
       const data = await checkoutApi({
@@ -1126,11 +1142,13 @@
         email: pixEmail.value.trim()
       });
 
-      checkoutToken = data.checkoutToken || "";
+      if (!data.checkoutToken || !data.qrCode) throw new Error("O Mercado Pago não retornou o código Pix. Aguarde alguns instantes e tente novamente.");
+      checkoutToken = data.checkoutToken;
       savePending(selectedProduct.id, checkoutToken, "pix");
 
       pixCode.value = data.qrCode || "";
       pixImage.src = data.qrCodeBase64 ? "data:image/png;base64," + data.qrCodeBase64 : "";
+      pixImage.classList.toggle("hidden", !data.qrCodeBase64);
       pixArea.classList.remove("hidden");
       paymentStatus.textContent = "Pix gerado. Aguardando o pagamento...";
       startPolling();
@@ -1207,7 +1225,8 @@
 
     cardButton.disabled = true;
     cardButton.textContent = "Abrindo Mercado Pago...";
-    cardStatus.textContent = "";
+    cardStatus.textContent = "Conectando ao Mercado Pago...";
+    cardStatus.classList.remove("error");
 
     try {
       const data = await cardApi({
@@ -1232,6 +1251,15 @@
       cardButton.disabled = false;
       cardButton.textContent = "Continuar com cartão • " + money.format(Number(selectedProduct.price));
     }
+  });
+
+  // Back from Mercado Pago may restore the disabled button from the browser cache.
+  window.addEventListener("pageshow", event => {
+    if (!event.persisted || !selectedProduct) return;
+    pixButton.disabled = false;
+    cardButton.disabled = false;
+    applyProductToCheckout(selectedProduct);
+    cardStatus.textContent = "Você voltou do Mercado Pago. Se não concluiu o pagamento, pode tentar novamente.";
   });
 
   async function handleCardReturn() {
@@ -1913,7 +1941,7 @@
     if (window.HEBOOKS_AUTH.isRecovering()) return;
     const { data: { session } } = await sb.auth.getSession();
     if (!session) {
-      if (new URLSearchParams(window.location.search).get("visitante") === "1") {
+      if (new URLSearchParams(window.location.search).get("visitante") === "1" || new URLSearchParams(window.location.search).has("card_return")) {
         // Public catalog only. All account/download requests still require Supabase Auth.
         await unlockSite(null);
       } else {
