@@ -24,7 +24,7 @@ async function ownsProduct(userId: string, productId: string) {
   return Boolean(data?.length);
 }
 
-Deno.serve(async (req: Request) => {
+const hebooksHandler = async (req: Request) => {
   if (req.method === "OPTIONS") return new Response("ok", { headers });
   if (req.method !== "POST") return json({ error: "Método não permitido." }, 405);
   try {
@@ -92,4 +92,12 @@ Deno.serve(async (req: Request) => {
     console.error("reader-experience", error instanceof Error ? error.message : "unknown error");
     return json({ error: "Não foi possível concluir. Tente novamente em instantes." }, 500);
   }
+};
+Deno.serve(async (req: Request) => {
+  const response = await hebooksHandler(req);
+  const origin = req.headers.get("origin") || "";
+  if (["https://lojahebooks.com.br", "https://www.lojahebooks.com.br", "https://dominustech813-ui.github.io"].includes(origin)) {
+    response.headers.set("Access-Control-Allow-Origin", origin);
+  }
+  return response;
 });

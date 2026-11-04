@@ -5,9 +5,7 @@
     currency: config.currency || "BRL"
   });
 
-  const sb = window.supabase.createClient(config.supabaseUrl, config.supabasePublishableKey, {
-    auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true }
-  });
+  const sb = window.HEBOOKS_AUTH.getClient();
 
   const modal = document.getElementById("checkout-modal");
   const checkoutView = document.getElementById("checkout-view");
@@ -1278,80 +1276,6 @@
     cardStatus.textContent = "Pagamento ainda não confirmado. Aguarde alguns instantes e tente novamente.";
   }
 
-  sb.auth.onAuthStateChange((event, session) => {
-    if (event !== "PASSWORD_RECOVERY" || !session) return;
-    window.setTimeout(async () => {
-      const password = window.prompt("Recuperação H eBooks: digite uma nova senha com pelo menos 8 caracteres.");
-      if (password === null) return;
-      if (password.length < 8) {
-        gateMessage.textContent = "A nova senha precisa ter pelo menos 8 caracteres.";
-        gateMessage.classList.add("error");
-        return;
-      }
-      const { error } = await sb.auth.updateUser({ password });
-      if (error) {
-        gateMessage.textContent = error.message || "Não foi possível redefinir a senha.";
-        gateMessage.classList.add("error");
-        return;
-      }
-      gateMessage.classList.remove("error");
-      gateMessage.textContent = "Senha atualizada. Sua conta já está conectada.";
-      await unlockSite(session);
-    }, 0);
-  });
-
-  gateTabRegister.addEventListener("click", () => switchGateTab("register"));
-  gateTabLogin.addEventListener("click", () => switchGateTab("login"));
-
-  gateRegisterForm.addEventListener("submit", async event => {
-    event.preventDefault();
-    gateRegisterButton.disabled = true;
-    gateRegisterButton.textContent = "Criando conta...";
-    gateMessage.textContent = "";
-    gateMessage.classList.remove("error");
-
-    try {
-      const email = gateRegisterEmail.value.trim().toLowerCase();
-      const password = gateRegisterPassword.value;
-
-      await accountApi("register", { email, password }, false);
-      await completeGateLogin(email, password);
-    } catch (error) {
-      if (error.status === 409) {
-        switchGateTab("login");
-        gateLoginEmail.value = gateRegisterEmail.value.trim().toLowerCase();
-        gateMessage.textContent = "Esta conta já existe. Entre com a senha usada anteriormente.";
-      } else {
-        gateMessage.textContent = error.message || "Não foi possível criar sua conta.";
-      }
-      gateMessage.classList.add("error");
-    } finally {
-      gateRegisterButton.disabled = false;
-      gateRegisterButton.textContent = "Criar minha conta";
-    }
-  });
-
-  gateLoginForm.addEventListener("submit", async event => {
-    event.preventDefault();
-    gateLoginButton.disabled = true;
-    gateLoginButton.textContent = "Entrando...";
-    gateMessage.textContent = "";
-    gateMessage.classList.remove("error");
-
-    try {
-      await completeGateLogin(
-        gateLoginEmail.value.trim().toLowerCase(),
-        gateLoginPassword.value
-      );
-    } catch (error) {
-      gateMessage.textContent = error.message || "Não foi possível entrar.";
-      gateMessage.classList.add("error");
-    } finally {
-      gateLoginButton.disabled = false;
-      gateLoginButton.textContent = "Entrar no H ebooks";
-    }
-  });
-
   if (config.githubEnabled) {
     gateGithubButton.disabled = false;
     gateGithubNote.textContent = "Use sua conta GitHub para entrar.";
@@ -1985,8 +1909,8 @@
   }
 
   async function init() {
-    switchGateTab("register");
-
+    await window.HEBOOKS_AUTH.ready;
+    if (window.HEBOOKS_AUTH.isRecovering()) return;
     const { data: { session } } = await sb.auth.getSession();
     if (!session) {
       document.body.classList.add("auth-locked");
@@ -2010,5 +1934,12 @@
     }
   }
 
-  init();
+  sb.auth.onAuthStateChange((event) => {
+    if (event === "SIGNED_OUT") {
+      document.body.classList.add("auth-locked");
+      closeModal();
+      window.HEBOOKS_AUTH.show("login");
+    }
+  });
+  init().catch(() => window.HEBOOKS_AUTH.notify("Não foi possível iniciar a loja. Recarregue a página ou tente entrar novamente.", true));
 })();

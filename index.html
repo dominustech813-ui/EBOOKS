@@ -18,7 +18,7 @@
   <link rel="stylesheet" href="styles.css?v=20261026-image-crop-v3" />
 
   <style id="auth-critical">
-    body.auth-locked{margin:0;overflow:hidden;background:#f7f6fc}
+    body.auth-locked{margin:0;overflow-x:hidden;overflow-y:auto;background:#f7f6fc}
     body.auth-locked > .topbar,
     body.auth-locked > header,
     body.auth-locked > main,
@@ -51,129 +51,7 @@
     }
   </style>
 
-  <script>
-  // Núcleo de autenticação: inicializado antes do app e independente do catálogo.
-  window.HEBOOKS_AUTH = (() => {
-    const domain = "https://lojahebooks.com.br/";
-    const byId = id => document.getElementById(id);
-    let busy = false;
-    let client = null;
-
-    function notify(message, isError = false) {
-      const el = byId("gate-message");
-      if (!el) return;
-      el.textContent = message;
-      el.classList.toggle("error", isError);
-      el.style.display = "block";
-      el.style.color = isError ? "#b42318" : "#175c39";
-      el.setAttribute("role", "status");
-    }
-    function show(mode) {
-      const login = mode === "login";
-      byId("gate-tab-login")?.classList.toggle("active",login);
-      byId("gate-tab-register")?.classList.toggle("active",!login);
-      byId("gate-register-form")?.classList.toggle("hidden",login);
-      byId("gate-login-form")?.classList.toggle("hidden",!login);
-      if (byId("gate-title")) byId("gate-title").textContent=login ? "Entre na sua conta" : "Crie sua conta";
-      if (byId("gate-subtitle")) byId("gate-subtitle").textContent=login ? "Use o mesmo e-mail e senha da sua conta antiga." : "Crie sua conta para acessar o catálogo.";
-      notify("");
-      return false;
-    }
-    function getConfig() {
-      const c=window.HEBOOKS_CONFIG;
-      if (!c?.supabaseUrl || !c?.supabasePublishableKey) throw new Error("Configuração indisponível. Verifique se config.js carregou.");
-      return c;
-    }
-    function getClient() {
-      if (!client) {
-        const c=getConfig();
-        if (!window.supabase?.createClient) throw new Error("Biblioteca de autenticação não carregou. Recarregue a página.");
-        client=window.supabase.createClient(c.supabaseUrl,c.supabasePublishableKey,{
-          auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
-        });
-      }
-      return client;
-    }
-    function credentials(mode) {
-      const email=String(byId(mode==="login"?"gate-login-email":"gate-register-email")?.value||"").trim().toLowerCase();
-      const password=String(byId(mode==="login"?"gate-login-password":"gate-register-password")?.value||"");
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Informe um e-mail válido.");
-      if (password.length < 8) throw new Error("Informe uma senha de pelo menos 8 caracteres.");
-      return {email,password};
-    }
-    async function submit(event,mode) {
-      event?.preventDefault();
-      event?.stopImmediatePropagation();
-      if (busy) return false;
-      busy=true;
-      const button=byId(mode==="login"?"gate-login-button":"gate-register-button");
-      if(button)button.disabled=true;
-      notify(mode==="login"?"Entrando na conta...":"Criando a conta...");
-      try {
-        const {email,password}=credentials(mode);
-        const c=getConfig();
-        if (mode==="register") {
-          const response=await fetch(c.accountApiUrl,{
-            method:"POST",
-            headers:{"Content-Type":"application/json"},
-            body:JSON.stringify({action:"register",email,password})
-          });
-          const data=await response.json().catch(()=>({}));
-          if(response.status===409) {
-            show("login");
-            if(byId("gate-login-email"))byId("gate-login-email").value=email;
-            throw new Error("Esta conta já existe. Use Entrar ou recupere sua senha.");
-          }
-          if(!response.ok)throw new Error(data.error||"Não foi possível criar a conta.");
-        }
-        const {data,error}=await getClient().auth.signInWithPassword({email,password});
-        if(error || !data?.session)throw new Error("Credenciais não aceitas. Confira seu e-mail e senha ou use Esqueci minha senha.");
-        notify("Login realizado! Abrindo seu catálogo...");
-        window.location.reload();
-      } catch(error) {
-        notify(error?.message||"Erro de autenticação.",true);
-      } finally {
-        busy=false;
-        if(button)button.disabled=false;
-      }
-      return false;
-    }
-    async function recover(event) {
-      event?.preventDefault();
-      event?.stopImmediatePropagation();
-      if(busy)return false;
-      const mode=byId("gate-login-form")?.classList.contains("hidden")?"register":"login";
-      let email=String(byId(mode==="login"?"gate-login-email":"gate-register-email")?.value||"").trim().toLowerCase();
-      if(!email) {
-        show("login");
-        notify("Digite o e-mail da conta no campo acima e clique em Esqueci minha senha.",true);
-        return false;
-      }
-      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
-        notify("Informe um e-mail válido.",true);return false;
-      }
-      busy=true;
-      notify("Enviando e-mail de recuperação...");
-      try {
-        const {error}=await getClient().auth.resetPasswordForEmail(email,{redirectTo:domain});
-        if(error)throw error;
-        notify("Solicitação processada. Confira seu e-mail e a pasta de spam.");
-      } catch(error) {
-        notify("Falha no envio: "+(error?.message||"Não foi possível solicitar recuperação."),true);
-      } finally{busy=false;}
-      return false;
-    }
-    return {show,submit,recover};
-  })();
-  // Exibe mensagem mesmo quando o carregamento do app falhar.
-  window.addEventListener("error",event=>{
-    const el=document.getElementById("gate-message");
-    if(document.body?.classList.contains("auth-locked") && el && !el.textContent) {
-      el.textContent="Não foi possível carregar um componente da loja. Os botões de acesso continuam disponíveis.";
-      el.style.color="#b42318";
-    }
-  });
-  </script>/head>
+</head>
 <body class="auth-locked">
   <div class="discount-banner" role="status" aria-label="Promoção H ebooks">
     <span class="discount-badge">10% OFF</span>
@@ -208,31 +86,36 @@
         <h2 id="gate-title">Crie sua conta</h2>
         <p id="gate-subtitle">Você precisa estar conectado para acessar o H ebooks.</p>
 
-        <div class="auth-tabs gate-tabs">
-          <button type="button" class="auth-tab active" id="gate-tab-register" onclick="window.HEBOOKS_AUTH.show('register')">Criar conta</button>
-          <button type="button" class="auth-tab" id="gate-tab-login" onclick="window.HEBOOKS_AUTH.show('login')">Entrar</button>
+        <div class="auth-tabs gate-tabs" id="gate-tabs">
+          <button type="button" class="auth-tab active" id="gate-tab-register">Criar conta</button>
+          <button type="button" class="auth-tab" id="gate-tab-login">Entrar</button>
         </div>
 
-        <form id="gate-register-form" class="checkout-form" onsubmit="return window.HEBOOKS_AUTH.submit(event,'register')">
+        <form id="gate-register-form" class="checkout-form" novalidate>
           <label>Seu e-mail<input id="gate-register-email" type="email" autocomplete="email" required placeholder="voce@email.com" /></label>
           <label>Crie uma senha<input id="gate-register-password" type="password" autocomplete="new-password" minlength="8" required placeholder="Mínimo de 8 caracteres" /></label>
           <button class="btn btn-large full" id="gate-register-button" type="submit">Criar minha conta</button>
         </form>
 
-        <form id="gate-login-form" class="checkout-form hidden" onsubmit="return window.HEBOOKS_AUTH.submit(event,'login')">
+        <form id="gate-login-form" class="checkout-form hidden" novalidate>
           <label>Seu e-mail<input id="gate-login-email" type="email" autocomplete="email" required placeholder="voce@email.com" /></label>
-          <label>Sua senha<input id="gate-login-password" type="password" autocomplete="current-password" minlength="8" required placeholder="Sua senha" /></label>
+          <label>Sua senha<input id="gate-login-password" type="password" autocomplete="current-password" required placeholder="Sua senha" /></label>
           <button class="btn btn-large full" id="gate-login-button" type="submit">Entrar no H ebooks</button>
         </form>
 
-        <button type="button" id="gate-password-reset" onclick="return window.HEBOOKS_AUTH.recover(event)" style="display:block;margin-top:12px;border:2px solid #5b3df5;border-radius:12px;background:#f2eeff;color:#4c2bc5;cursor:pointer;font-weight:800;width:100%;padding:14px">Esqueci minha senha — receber link por e-mail</button><p id="gate-recovery-status" role="status" aria-live="polite" hidden></p>
+        <form id="gate-update-form" class="checkout-form hidden" novalidate>
+          <label>Nova senha<input id="gate-new-password" type="password" autocomplete="new-password" minlength="8" required /></label>
+          <label>Confirme a nova senha<input id="gate-confirm-password" type="password" autocomplete="new-password" minlength="8" required /></label>
+          <button class="btn full" id="gate-update-button" type="submit">Salvar nova senha</button>
+        </form>
+        <button type="button" id="gate-password-reset" style="display:block;margin-top:12px;border:2px solid #5b3df5;border-radius:12px;background:#f2eeff;color:#4c2bc5;cursor:pointer;font-weight:800;width:100%;padding:14px">Esqueci minha senha — receber link por e-mail</button><p id="gate-recovery-status" role="status" aria-live="polite" hidden></p>
         <div class="auth-divider"><span>ou</span></div>
         <button class="provider-button github" id="gate-github-button" type="button" disabled>
           <span class="provider-icon">GH</span>
           <span>Continuar com GitHub</span>
         </button>
         <small class="privacy-note" id="gate-github-note">GitHub será liberado quando o provedor estiver configurado.</small>
-        <p class="form-message" id="gate-message" role="status"></p>
+        <p class="form-message" id="gate-message" role="status" aria-live="polite"></p>
         <small class="gate-security">🔒 Sua senha é protegida pelo Supabase Auth e não fica visível para o H ebooks.</small>
       </div>
     </div>
@@ -731,7 +614,7 @@
 
         <form id="login-form" class="checkout-form hidden">
           <label>E-mail<input id="login-email" type="email" autocomplete="email" required placeholder="voce@email.com" /></label>
-          <label>Senha<input id="login-password" type="password" autocomplete="current-password" minlength="8" required placeholder="Sua senha" /></label>
+          <label>Senha<input id="login-password" type="password" autocomplete="current-password" required placeholder="Sua senha" /></label>
           <button class="btn btn-large full" id="login-button" type="submit">Entrar na minha conta</button>
         </form>
 
@@ -812,10 +695,11 @@
     <button type="button" id="mobile-library-button"><span class="mobile-nav-icon">▣</span><small>Biblioteca</small></button>
   </nav>
 
-  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js?v=20261104-standalone-auth-v5"></script>
-  <script src="reader-experience.js?v=20261104-standalone-auth-v5"></script>
-  <script src="app.js?v=20261104-standalone-auth-v5"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
+  <script src="config.js?v=20261104-auth-domain-v6"></script>
+  <script src="auth.js?v=20261104-auth-domain-v6"></script>
+  <script src="reader-experience.js?v=20261104-auth-domain-v6"></script>
+  <script src="app.js?v=20261104-auth-domain-v6"></script>
 
 
 </body>

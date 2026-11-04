@@ -71,7 +71,7 @@ ASAAS_API_KEY=sua_chave_secreta
 PRODUCT_PRICE=29.90
 EBOOK_BUCKET=ebooks
 EBOOK_FILE=atividades-fisicas-guia.pdf
-ALLOWED_ORIGIN=https://dominustech813-ui.github.io
+ALLOWED_ORIGIN=https://lojahebooks.com.br
 ```
 
 `SUPABASE_URL` e `SUPABASE_SERVICE_ROLE_KEY` devem estar disponíveis no ambiente da função.
@@ -105,7 +105,7 @@ Depois de habilitado, novos commits na branch `main` serão publicados automatic
 URL esperada:
 
 ```
-https://dominustech813-ui.github.io/EBOOKS/
+https://lojahebooks.com.br/
 ```
 
 ## Pagamento indo para sua conta

@@ -64,7 +64,7 @@
       email: clean,
       options: {
         shouldCreateUser: true,
-        emailRedirectTo: "https://dominustech813-ui.github.io/EBOOKS/account.html"
+        emailRedirectTo: "https://lojahebooks.com.br/account.html"
       }
     });
 
@@ -92,7 +92,7 @@
 
         const info = document.createElement("div");
         const title = document.createElement("h3");
-        title.textContent = p.productName;
+        title.textContent = p.product?.title || p.productName || "eBook H ebooks";
         const desc = document.createElement("p");
         const approved = p.approved_at ? new Date(p.approved_at).toLocaleDateString("pt-BR") : "";
         desc.textContent = "Compra aprovada" + (approved ? " em " + approved : "") + " • acesso liberado";
