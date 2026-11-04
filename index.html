@@ -51,6 +51,58 @@
     }
   </style>
 
+  <script>
+  // Recuperação independente da aplicação e do carregamento de bibliotecas externas.
+  window.HEBOOKS_RECOVER = async function(event) {
+    if (event) event.preventDefault();
+    const button = document.getElementById("gate-password-reset");
+    const output = document.getElementById("gate-recovery-status");
+    if (!button || !output) return false;
+    const loginInput = document.getElementById("gate-login-email");
+    const registerInput = document.getElementById("gate-register-email");
+    const isLogin = !document.getElementById("gate-login-form")?.classList.contains("hidden");
+    let email = String((isLogin ? loginInput?.value : registerInput?.value) || loginInput?.value || registerInput?.value || "").trim().toLowerCase();
+    if (!email) {
+      email = String(window.prompt("Informe o e-mail cadastrado no H eBooks para recuperar sua senha:") || "").trim().toLowerCase();
+    }
+    output.hidden = false;
+    output.style.color = "#3b257f";
+    output.style.background = "#f1ecff";
+    output.style.padding = "12px";
+    output.style.borderRadius = "10px";
+    output.style.marginTop = "8px";
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+      output.textContent = "Informe um e-mail válido para receber o link de recuperação.";
+      return false;
+    }
+    button.disabled = true;
+    output.textContent = "Solicitando recuperação de senha para " + email + "...";
+    try {
+      const cfg = window.HEBOOKS_CONFIG || {};
+      if (!cfg.supabaseUrl || !cfg.supabasePublishableKey) {
+        throw new Error("Configuração da conta não carregou. Atualize a página.");
+      }
+      const url = cfg.supabaseUrl + "/auth/v1/recover?redirect_to=" + encodeURIComponent("https://lojahebooks.com.br/");
+      const response = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", "apikey": cfg.supabasePublishableKey },
+        body: JSON.stringify({ email })
+      });
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.msg || data.error_description || data.message || data.error || ("Erro " + response.status));
+      output.style.color = "#17643e";
+      output.style.background = "#e7f7ed";
+      output.textContent = "Solicitação recebida. Confira seu e-mail e a pasta spam. Se o e-mail estiver cadastrado, receberá as instruções.";
+    } catch (error) {
+      output.style.color = "#9b1c1c";
+      output.style.background = "#ffeded";
+      output.textContent = "Não foi possível enviar: " + (error.message || "Erro desconhecido.");
+    } finally {
+      button.disabled = false;
+    }
+    return false;
+  };
+  </script>
 </head>
 <body class="auth-locked">
   <div class="discount-banner" role="status" aria-label="Promoção H ebooks">
@@ -103,7 +155,7 @@
           <button class="btn btn-large full" id="gate-login-button" type="submit">Entrar no H ebooks</button>
         </form>
 
-        <button type="button" id="gate-password-reset" style="margin-top:12px;border:0;background:transparent;color:#5b3df5;cursor:pointer;font-weight:700;width:100%;padding:8px">Esqueci minha senha</button>
+        <button type="button" id="gate-password-reset" onclick="window.HEBOOKS_RECOVER(event)" style="display:block;margin-top:12px;border:2px solid #5b3df5;border-radius:12px;background:#f2eeff;color:#4c2bc5;cursor:pointer;font-weight:800;width:100%;padding:14px">Esqueci minha senha — receber link por e-mail</button><p id="gate-recovery-status" role="status" aria-live="polite" hidden></p>
         <div class="auth-divider"><span>ou</span></div>
         <button class="provider-button github" id="gate-github-button" type="button" disabled>
           <span class="provider-icon">GH</span>
@@ -693,45 +745,8 @@
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
   <script src="config.js?v=202610220835"></script>
   <script src="reader-experience.js?v=20261026"></script>
-  <script src="app.js?v=20261102-recovery-v3"></script>
-  <script>
-  // Recuperação independente: funciona mesmo se o catálogo/app falhar ao iniciar.
-  (() => {
-    const button = document.getElementById("gate-password-reset");
-    const message = document.getElementById("gate-message");
-    const loginEmail = document.getElementById("gate-login-email");
-    const registerEmail = document.getElementById("gate-register-email");
-    if (!button || !message) return;
-    button.addEventListener("click", async () => {
-      const email = (loginEmail?.value.trim() || registerEmail?.value.trim() || "").toLowerCase();
-      message.classList.remove("error");
-      if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-        message.textContent = "Digite um e-mail válido no campo acima e clique novamente em Esqueci minha senha.";
-        message.classList.add("error");
-        return;
-      }
-      button.disabled = true;
-      message.textContent = "Enviando link de recuperação...";
-      try {
-        const cfg = window.HEBOOKS_CONFIG;
-        if (!cfg?.supabaseUrl || !cfg?.supabasePublishableKey) throw new Error("Configuração de autenticação indisponível.");
-        const response = await fetch(cfg.supabaseUrl + "/auth/v1/recover", {
-          method: "POST",
-          headers: { "Content-Type": "application/json", "apikey": cfg.supabasePublishableKey },
-          body: JSON.stringify({ email, redirect_to: "https://lojahebooks.com.br/" })
-        });
-        const data = await response.json().catch(() => ({}));
-        if (!response.ok) throw new Error(data.msg || data.error_description || data.message || "Falha ao solicitar recuperação.");
-        message.textContent = "Solicitação enviada! Confira seu e-mail e a pasta de spam.";
-      } catch (error) {
-        message.textContent = error.message || "Falha ao enviar recuperação.";
-        message.classList.add("error");
-      } finally {
-        button.disabled = false;
-      }
-    });
-  })();
-  </script>
+  <script src="app.js?v=20261104-auth-fix-v4"></script>
+
 
 </body>
 </html>
