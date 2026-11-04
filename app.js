@@ -201,7 +201,7 @@
 
   async function unlockSite(session) {
     document.body.classList.remove("auth-locked");
-    accountButton.textContent = "Minha biblioteca";
+    accountButton.textContent = session ? "Minha biblioteca" : "Entrar";
 
     const email = String(session?.user?.email || "").trim().toLowerCase();
     if (email) {
@@ -1913,7 +1913,12 @@
     if (window.HEBOOKS_AUTH.isRecovering()) return;
     const { data: { session } } = await sb.auth.getSession();
     if (!session) {
-      document.body.classList.add("auth-locked");
+      if (new URLSearchParams(window.location.search).get("visitante") === "1") {
+        // Public catalog only. All account/download requests still require Supabase Auth.
+        await unlockSite(null);
+      } else {
+        document.body.classList.add("auth-locked");
+      }
       return;
     }
 
