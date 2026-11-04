@@ -52,58 +52,128 @@
   </style>
 
   <script>
-  // Recuperação independente da aplicação e do carregamento de bibliotecas externas.
-  window.HEBOOKS_RECOVER = async function(event) {
-    if (event) event.preventDefault();
-    const button = document.getElementById("gate-password-reset");
-    const output = document.getElementById("gate-recovery-status");
-    if (!button || !output) return false;
-    const loginInput = document.getElementById("gate-login-email");
-    const registerInput = document.getElementById("gate-register-email");
-    const isLogin = !document.getElementById("gate-login-form")?.classList.contains("hidden");
-    let email = String((isLogin ? loginInput?.value : registerInput?.value) || loginInput?.value || registerInput?.value || "").trim().toLowerCase();
-    if (!email) {
-      email = String(window.prompt("Informe o e-mail cadastrado no H eBooks para recuperar sua senha:") || "").trim().toLowerCase();
+  // Núcleo de autenticação: inicializado antes do app e independente do catálogo.
+  window.HEBOOKS_AUTH = (() => {
+    const domain = "https://lojahebooks.com.br/";
+    const byId = id => document.getElementById(id);
+    let busy = false;
+    let client = null;
+
+    function notify(message, isError = false) {
+      const el = byId("gate-message");
+      if (!el) return;
+      el.textContent = message;
+      el.classList.toggle("error", isError);
+      el.style.display = "block";
+      el.style.color = isError ? "#b42318" : "#175c39";
+      el.setAttribute("role", "status");
     }
-    output.hidden = false;
-    output.style.color = "#3b257f";
-    output.style.background = "#f1ecff";
-    output.style.padding = "12px";
-    output.style.borderRadius = "10px";
-    output.style.marginTop = "8px";
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      output.textContent = "Informe um e-mail válido para receber o link de recuperação.";
+    function show(mode) {
+      const login = mode === "login";
+      byId("gate-tab-login")?.classList.toggle("active",login);
+      byId("gate-tab-register")?.classList.toggle("active",!login);
+      byId("gate-register-form")?.classList.toggle("hidden",login);
+      byId("gate-login-form")?.classList.toggle("hidden",!login);
+      if (byId("gate-title")) byId("gate-title").textContent=login ? "Entre na sua conta" : "Crie sua conta";
+      if (byId("gate-subtitle")) byId("gate-subtitle").textContent=login ? "Use o mesmo e-mail e senha da sua conta antiga." : "Crie sua conta para acessar o catálogo.";
+      notify("");
       return false;
     }
-    button.disabled = true;
-    output.textContent = "Solicitando recuperação de senha para " + email + "...";
-    try {
-      const cfg = window.HEBOOKS_CONFIG || {};
-      if (!cfg.supabaseUrl || !cfg.supabasePublishableKey) {
-        throw new Error("Configuração da conta não carregou. Atualize a página.");
-      }
-      const url = cfg.supabaseUrl + "/auth/v1/recover?redirect_to=" + encodeURIComponent("https://lojahebooks.com.br/");
-      const response = await fetch(url, {
-        method: "POST",
-        headers: { "Content-Type": "application/json", "apikey": cfg.supabasePublishableKey },
-        body: JSON.stringify({ email })
-      });
-      const data = await response.json().catch(() => ({}));
-      if (!response.ok) throw new Error(data.msg || data.error_description || data.message || data.error || ("Erro " + response.status));
-      output.style.color = "#17643e";
-      output.style.background = "#e7f7ed";
-      output.textContent = "Solicitação recebida. Confira seu e-mail e a pasta spam. Se o e-mail estiver cadastrado, receberá as instruções.";
-    } catch (error) {
-      output.style.color = "#9b1c1c";
-      output.style.background = "#ffeded";
-      output.textContent = "Não foi possível enviar: " + (error.message || "Erro desconhecido.");
-    } finally {
-      button.disabled = false;
+    function getConfig() {
+      const c=window.HEBOOKS_CONFIG;
+      if (!c?.supabaseUrl || !c?.supabasePublishableKey) throw new Error("Configuração indisponível. Verifique se config.js carregou.");
+      return c;
     }
-    return false;
-  };
-  </script>
-</head>
+    function getClient() {
+      if (!client) {
+        const c=getConfig();
+        if (!window.supabase?.createClient) throw new Error("Biblioteca de autenticação não carregou. Recarregue a página.");
+        client=window.supabase.createClient(c.supabaseUrl,c.supabasePublishableKey,{
+          auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:true}
+        });
+      }
+      return client;
+    }
+    function credentials(mode) {
+      const email=String(byId(mode==="login"?"gate-login-email":"gate-register-email")?.value||"").trim().toLowerCase();
+      const password=String(byId(mode==="login"?"gate-login-password":"gate-register-password")?.value||"");
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) throw new Error("Informe um e-mail válido.");
+      if (password.length < 8) throw new Error("Informe uma senha de pelo menos 8 caracteres.");
+      return {email,password};
+    }
+    async function submit(event,mode) {
+      event?.preventDefault();
+      event?.stopImmediatePropagation();
+      if (busy) return false;
+      busy=true;
+      const button=byId(mode==="login"?"gate-login-button":"gate-register-button");
+      if(button)button.disabled=true;
+      notify(mode==="login"?"Entrando na conta...":"Criando a conta...");
+      try {
+        const {email,password}=credentials(mode);
+        const c=getConfig();
+        if (mode==="register") {
+          const response=await fetch(c.accountApiUrl,{
+            method:"POST",
+            headers:{"Content-Type":"application/json"},
+            body:JSON.stringify({action:"register",email,password})
+          });
+          const data=await response.json().catch(()=>({}));
+          if(response.status===409) {
+            show("login");
+            if(byId("gate-login-email"))byId("gate-login-email").value=email;
+            throw new Error("Esta conta já existe. Use Entrar ou recupere sua senha.");
+          }
+          if(!response.ok)throw new Error(data.error||"Não foi possível criar a conta.");
+        }
+        const {data,error}=await getClient().auth.signInWithPassword({email,password});
+        if(error || !data?.session)throw new Error("Credenciais não aceitas. Confira seu e-mail e senha ou use Esqueci minha senha.");
+        notify("Login realizado! Abrindo seu catálogo...");
+        window.location.reload();
+      } catch(error) {
+        notify(error?.message||"Erro de autenticação.",true);
+      } finally {
+        busy=false;
+        if(button)button.disabled=false;
+      }
+      return false;
+    }
+    async function recover(event) {
+      event?.preventDefault();
+      event?.stopImmediatePropagation();
+      if(busy)return false;
+      const mode=byId("gate-login-form")?.classList.contains("hidden")?"register":"login";
+      let email=String(byId(mode==="login"?"gate-login-email":"gate-register-email")?.value||"").trim().toLowerCase();
+      if(!email) {
+        show("login");
+        notify("Digite o e-mail da conta no campo acima e clique em Esqueci minha senha.",true);
+        return false;
+      }
+      if(!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)){
+        notify("Informe um e-mail válido.",true);return false;
+      }
+      busy=true;
+      notify("Enviando e-mail de recuperação...");
+      try {
+        const {error}=await getClient().auth.resetPasswordForEmail(email,{redirectTo:domain});
+        if(error)throw error;
+        notify("Solicitação processada. Confira seu e-mail e a pasta de spam.");
+      } catch(error) {
+        notify("Falha no envio: "+(error?.message||"Não foi possível solicitar recuperação."),true);
+      } finally{busy=false;}
+      return false;
+    }
+    return {show,submit,recover};
+  })();
+  // Exibe mensagem mesmo quando o carregamento do app falhar.
+  window.addEventListener("error",event=>{
+    const el=document.getElementById("gate-message");
+    if(document.body?.classList.contains("auth-locked") && el && !el.textContent) {
+      el.textContent="Não foi possível carregar um componente da loja. Os botões de acesso continuam disponíveis.";
+      el.style.color="#b42318";
+    }
+  });
+  </script>/head>
 <body class="auth-locked">
   <div class="discount-banner" role="status" aria-label="Promoção H ebooks">
     <span class="discount-badge">10% OFF</span>
@@ -139,23 +209,23 @@
         <p id="gate-subtitle">Você precisa estar conectado para acessar o H ebooks.</p>
 
         <div class="auth-tabs gate-tabs">
-          <button type="button" class="auth-tab active" id="gate-tab-register">Criar conta</button>
-          <button type="button" class="auth-tab" id="gate-tab-login">Entrar</button>
+          <button type="button" class="auth-tab active" id="gate-tab-register" onclick="window.HEBOOKS_AUTH.show('register')">Criar conta</button>
+          <button type="button" class="auth-tab" id="gate-tab-login" onclick="window.HEBOOKS_AUTH.show('login')">Entrar</button>
         </div>
 
-        <form id="gate-register-form" class="checkout-form">
+        <form id="gate-register-form" class="checkout-form" onsubmit="return window.HEBOOKS_AUTH.submit(event,'register')">
           <label>Seu e-mail<input id="gate-register-email" type="email" autocomplete="email" required placeholder="voce@email.com" /></label>
           <label>Crie uma senha<input id="gate-register-password" type="password" autocomplete="new-password" minlength="8" required placeholder="Mínimo de 8 caracteres" /></label>
           <button class="btn btn-large full" id="gate-register-button" type="submit">Criar minha conta</button>
         </form>
 
-        <form id="gate-login-form" class="checkout-form hidden">
+        <form id="gate-login-form" class="checkout-form hidden" onsubmit="return window.HEBOOKS_AUTH.submit(event,'login')">
           <label>Seu e-mail<input id="gate-login-email" type="email" autocomplete="email" required placeholder="voce@email.com" /></label>
           <label>Sua senha<input id="gate-login-password" type="password" autocomplete="current-password" minlength="8" required placeholder="Sua senha" /></label>
           <button class="btn btn-large full" id="gate-login-button" type="submit">Entrar no H ebooks</button>
         </form>
 
-        <button type="button" id="gate-password-reset" onclick="window.HEBOOKS_RECOVER(event)" style="display:block;margin-top:12px;border:2px solid #5b3df5;border-radius:12px;background:#f2eeff;color:#4c2bc5;cursor:pointer;font-weight:800;width:100%;padding:14px">Esqueci minha senha — receber link por e-mail</button><p id="gate-recovery-status" role="status" aria-live="polite" hidden></p>
+        <button type="button" id="gate-password-reset" onclick="return window.HEBOOKS_AUTH.recover(event)" style="display:block;margin-top:12px;border:2px solid #5b3df5;border-radius:12px;background:#f2eeff;color:#4c2bc5;cursor:pointer;font-weight:800;width:100%;padding:14px">Esqueci minha senha — receber link por e-mail</button><p id="gate-recovery-status" role="status" aria-live="polite" hidden></p>
         <div class="auth-divider"><span>ou</span></div>
         <button class="provider-button github" id="gate-github-button" type="button" disabled>
           <span class="provider-icon">GH</span>
@@ -743,9 +813,9 @@
   </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="config.js?v=202610220835"></script>
-  <script src="reader-experience.js?v=20261026"></script>
-  <script src="app.js?v=20261104-auth-fix-v4"></script>
+  <script src="config.js?v=20261104-standalone-auth-v5"></script>
+  <script src="reader-experience.js?v=20261104-standalone-auth-v5"></script>
+  <script src="app.js?v=20261104-standalone-auth-v5"></script>
 
 
 </body>
