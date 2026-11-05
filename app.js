@@ -447,44 +447,19 @@
     accountButton.textContent = session ? "Minha biblioteca" : "Entrar";
   }
 
+  // A compra é liberada pelo comprovante aleatório de checkout, sem conta ou senha.
   async function showAuthGate(product, token, buyerEmail = "", method = "") {
     selectedProduct = product || selectedProduct;
-    pendingClaimToken = token || "";
-    pendingClaimMethod = method || "";
-    pendingBuyerEmail = String(buyerEmail || "").trim().toLowerCase();
-
-    const pending = {
-      checkoutToken: pendingClaimToken,
-      productId: selectedProduct?.id || "",
-      method: pendingClaimMethod,
-      buyerEmail: pendingBuyerEmail
-    };
-    writeStorage("hebooks:pending-claim", pending);
-
-    if (pendingBuyerEmail) {
-      registerEmail.value = pendingBuyerEmail;
-      loginEmail.value = pendingBuyerEmail;
-    }
-
-    const { data: { session } } = await sb.auth.getSession();
-    if (session && pendingClaimToken) {
-      try {
-        await claimAndRelease();
-        return;
-      } catch (error) {
-        if (error.status !== 401) {
-          authMessage.textContent = error.message || "Não foi possível vincular a compra à sua conta.";
-          authMessage.classList.add("error");
-        }
-      }
-    }
-
-    authTitle.textContent = pendingClaimToken ? "Crie sua conta para liberar o eBook" : "Entre na sua conta H ebooks";
-    authContext.textContent = pendingClaimToken
-      ? "Seu pagamento foi confirmado. Use o mesmo e-mail informado na compra para guardar este eBook na sua biblioteca."
-      : "Entre para acessar os eBooks que você já comprou.";
-    switchAuthTab(pendingClaimToken ? "register" : "login");
-    setView(authView);
+    if (!token) throw new Error("Compra não encontrada. Entre em contato com o suporte.");
+    const data = await accountApi("guest-download", { checkoutToken: token }, false);
+    if (!data.downloadUrl) throw new Error("Pagamento confirmado, mas o arquivo ainda não está disponível.");
+    const productId = data.productId || selectedProduct?.id;
+    if (productId) savePurchase(productId, token, method || "pix");
+    removeStorage("hebooks:pending-claim");
+    removeStorage("hebooks:last-card-pending");
+    downloadButton.href = data.downloadUrl;
+    successProductName.textContent = data.productName || selectedProduct?.title || "Seu eBook";
+    setView(successView);
     openModal();
   }
 
@@ -1088,7 +1063,13 @@
     const owned = readStorage(purchaseKey(product.id));
     if (owned?.checkoutToken) {
       applyProductToCheckout(product);
-      await showAuthGate(product, owned.checkoutToken, "", owned.method || "account");
+      try {
+        await showAuthGate(product, owned.checkoutToken, "", owned.method || "pix");
+      } catch (error) {
+        // Uma compra antiga ou ainda pendente não deve bloquear uma nova tentativa.
+        clearPurchase(product.id);
+        alert(error.message || "Não foi possível recuperar a compra.");
+      }
       return;
     }
 
@@ -1940,19 +1921,12 @@
     await window.HEBOOKS_AUTH.ready;
     if (window.HEBOOKS_AUTH.isRecovering()) return;
     const { data: { session } } = await sb.auth.getSession();
-    if (!session) {
-      if (new URLSearchParams(window.location.search).get("visitante") === "1" || new URLSearchParams(window.location.search).has("card_return")) {
-        // Public catalog only. All account/download requests still require Supabase Auth.
-        await unlockSite(null);
-      } else {
-        document.body.classList.add("auth-locked");
-      }
-      return;
-    }
-
+    // Catálogo e checkout abertos para todos, com ou sem sessão Supabase.
     await unlockSite(session);
-    await loadDiscordStore();
-    await handleDiscordReturn();
+    if (session) {
+      await loadDiscordStore();
+      await handleDiscordReturn();
+    }
 
     const storedClaim = readStorage("hebooks:pending-claim");
     if (storedClaim?.checkoutToken) {
@@ -1969,9 +1943,8 @@
 
   sb.auth.onAuthStateChange((event) => {
     if (event === "SIGNED_OUT") {
-      document.body.classList.add("auth-locked");
-      closeModal();
-      window.HEBOOKS_AUTH.show("login");
+      // Logout não bloqueia a loja pública.
+      document.body.classList.remove("auth-locked");
     }
   });
   init().catch(() => window.HEBOOKS_AUTH.notify("Não foi possível iniciar a loja. Recarregue a página ou tente entrar novamente.", true));
