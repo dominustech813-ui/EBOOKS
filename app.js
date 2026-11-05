@@ -416,16 +416,37 @@
     return data;
   }
 
+  function discordGuestToken() {
+    const key = "hebooks:discord-guest-v1";
+    let token = localStorage.getItem(key);
+    if (!token || !/^[0-9a-f-]{36}$/i.test(token)) {
+      token = crypto.randomUUID();
+      localStorage.setItem(key, token);
+    }
+    return token;
+  }
+  function discordPurchaseEmail() {
+    const saved = localStorage.getItem("hebooks:discord-buyer-email") || pixEmail?.value || "";
+    const value = window.prompt("Informe seu e-mail para comprar um cargo Discord:", saved);
+    if (value === null) return null;
+    const email = value.trim().toLowerCase();
+    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+      alert("Informe um e-mail válido.");
+      return null;
+    }
+    localStorage.setItem("hebooks:discord-buyer-email", email);
+    return email;
+  }
   async function discordRoleApi(action, extra = {}) {
     const { data: { session } } = await sb.auth.getSession();
-    if (!session?.access_token) throw new Error("Entre na sua conta do H ebooks para continuar.");
+    const headers = {
+      "Content-Type": "application/json",
+      "apikey": config.supabasePublishableKey,
+      "x-hebooks-guest": discordGuestToken()
+    };
+    if (session?.access_token) headers.Authorization = "Bearer " + session.access_token;
     const response = await fetch(config.discordRoleApiUrl, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + session.access_token,
-        apikey: config.supabasePublishableKey
-      },
+      method: "POST", headers,
       body: JSON.stringify({ action, ...extra })
     });
     const data = await response.json().catch(() => ({}));
@@ -1546,7 +1567,7 @@
         }
       }
     } catch (error) {
-      discordLinkStatus.textContent = "Loja Discord temporariamente indisponível";
+      discordLinkStatus.textContent = error.message || "Loja Discord temporariamente indisponível";
       if (supportTeamStatus) supportTeamStatus.textContent = "Programa de suporte temporariamente indisponível.";
     }
   }
@@ -1660,7 +1681,9 @@
       if (supportTeamPaymentStatus) supportTeamPaymentStatus.textContent = "";
 
       try {
-        const data = await discordRoleApi("create_pix", { roleId: "support-team" });
+        const email = discordPurchaseEmail();
+        if (!email) throw new Error("E-mail obrigatório para comprar.");
+        const data = await discordRoleApi("create_pix", { roleId: "support-team", email });
         supportTeamCheckoutToken = data.checkoutToken || "";
         if (!supportTeamCheckoutToken || !data.qrCode) throw new Error("O PIX não foi gerado corretamente.");
 
@@ -1779,7 +1802,9 @@
       const originalText = button.textContent;
       button.textContent = "GERANDO PIX...";
       try {
-        const data = await discordRoleApi("create_pix", { roleId: role.id });
+        const email = discordPurchaseEmail();
+        if (!email) throw new Error("E-mail obrigatório para comprar.");
+        const data = await discordRoleApi("create_pix", { roleId: role.id, email });
         discordRoleCheckoutToken = data.checkoutToken || "";
         discordRolePixCode.value = data.qrCode || "";
         discordRolePixImage.src = data.qrCodeBase64 ? "data:image/png;base64," + data.qrCodeBase64 : "";
@@ -1809,7 +1834,9 @@
       discordRolePixButton.disabled = true;
       discordRolePaymentStatus.textContent = "Gerando Pix...";
       try {
-        const data = await discordRoleApi("create_pix", { roleId: selectedDiscordRole.id });
+        const email = discordPurchaseEmail();
+        if (!email) throw new Error("E-mail obrigatório para comprar.");
+        const data = await discordRoleApi("create_pix", { roleId: selectedDiscordRole.id, email });
         discordRoleCheckoutToken = data.checkoutToken || "";
         discordRolePixCode.value = data.qrCode || "";
         discordRolePixImage.src = data.qrCodeBase64 ? "data:image/png;base64," + data.qrCodeBase64 : "";
@@ -1848,7 +1875,9 @@
       discordRoleCardButton.disabled = true;
       discordRolePaymentStatus.textContent = "Abrindo Mercado Pago...";
       try {
-        const data = await discordRoleApi("create_card", { roleId: selectedDiscordRole.id });
+        const email = discordPurchaseEmail();
+        if (!email) throw new Error("E-mail obrigatório para comprar.");
+        const data = await discordRoleApi("create_card", { roleId: selectedDiscordRole.id, email });
         if (!data.checkoutUrl) throw new Error("O Mercado Pago não retornou o checkout.");
         window.location.href = data.checkoutUrl;
       } catch (error) {
@@ -1866,6 +1895,12 @@
 
     if (linkResult) {
       await loadDiscordStore();
+      if (linkResult === "ok") {
+        discordLinkStatus.textContent = "Discord vinculado com sucesso ✓";
+      } else {
+        const explanations = { expired: "O prazo expirou. Tente vincular novamente.", config: "Discord ainda não configurado.", error: "Não foi possível concluir. Tente novamente." };
+        discordLinkStatus.textContent = explanations[linkResult] || "Vinculação não concluída.";
+      }
       if (linkResult === "ok") {
         setTimeout(() => {
           const el = document.getElementById("discord");
@@ -1923,10 +1958,8 @@
     const { data: { session } } = await sb.auth.getSession();
     // Catálogo e checkout abertos para todos, com ou sem sessão Supabase.
     await unlockSite(session);
-    if (session) {
-      await loadDiscordStore();
-      await handleDiscordReturn();
-    }
+    await loadDiscordStore();
+    await handleDiscordReturn();
 
     const storedClaim = readStorage("hebooks:pending-claim");
     if (storedClaim?.checkoutToken) {
