@@ -430,7 +430,7 @@
     const value = window.prompt("Informe seu e-mail para comprar um cargo Discord:", saved);
     if (value === null) return null;
     const email = value.trim().toLowerCase();
-    if (!/^[^\\s@]+@[^\\s@]+\\.[^\\s@]+$/.test(email)) {
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       alert("Informe um e-mail válido.");
       return null;
     }
