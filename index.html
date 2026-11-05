@@ -25,7 +25,7 @@
     body.auth-locked > footer,
     body.auth-locked > .modal{display:none!important}
     body.auth-locked #global-auth-gate{display:grid!important;min-height:100vh}
-    body:not(.auth-locked) #global-auth-gate{display:none!important}
+    body:not(.auth-locked) #global-auth-gate{display:none!important}\n    #account-button[hidden],#mobile-library-button[hidden],#global-auth-gate[hidden]{display:none!important}
     #global-auth-gate{grid-template-columns:1.08fr .92fr;background:#f7f6fc;font-family:Inter,system-ui,sans-serif}
     #global-auth-gate .global-auth-art{min-height:100vh;padding:48px 7vw;display:flex;flex-direction:column;justify-content:space-between;color:#fff;background:linear-gradient(145deg,#151321 0%,#241b55 55%,#5b3df5 130%);overflow:hidden}
     #global-auth-gate .gate-art-copy{max-width:580px;margin-top:70px}
@@ -52,14 +52,14 @@
   </style>
 
 </head>
-<body class="auth-locked">
+<body>
   <div class="discount-banner" role="status" aria-label="Promoção H ebooks">
     <span class="discount-badge">10% OFF</span>
     <strong>Oferta especial:</strong>
     <span>todos os eBooks estão com 10% de desconto por tempo limitado.</span>
     <a href="#catalogo">Ver eBooks</a>
   </div>
-  <section id="global-auth-gate" class="global-auth-gate" aria-label="Acesso H ebooks">
+  <section hidden id="global-auth-gate" class="global-auth-gate" aria-label="Acesso H ebooks">
     <div class="global-auth-art">
       <a class="brand gate-brand" href="#" aria-label="H ebooks"><span class="brand-mark">H</span><span>ebooks</span></a>
       <div class="gate-art-copy">
@@ -84,7 +84,7 @@
         <div class="gate-mobile-brand"><span class="brand-mark">H</span><strong>ebooks</strong></div>
         <span class="eyebrow">BEM-VINDO</span>
         <h2 id="gate-title">Crie sua conta</h2>
-        <p id="gate-subtitle">Você precisa estar conectado para acessar o H ebooks.</p>
+        <p id="gate-subtitle">O catálogo está disponível sem conta.</p>
 
         <div class="auth-tabs gate-tabs" id="gate-tabs">
           <button type="button" class="auth-tab active" id="gate-tab-register">Criar conta</button>
@@ -133,7 +133,7 @@
       <a href="#pagamento">Pagamento</a>
       <a href="#como-funciona">Como funciona</a>
     </nav>
-    <button class="btn btn-small btn-ghost" id="account-button" type="button">Entrar</button>
+    <button class="btn btn-small btn-ghost" id="account-button" type="button" hidden>Entrar</button>
   </header>
 
   <main>
@@ -593,7 +593,7 @@
         </div>
 
         <button class="text-button" id="support-button" type="button">Está com problema? Falar com suporte humano</button>
-        <small class="privacy-note">O download só é liberado depois da confirmação oficial do pagamento.</small>
+        <small class="privacy-note">Sem cadastro e sem senha: informe seu nome e e-mail para comprar. O download só é liberado após a confirmação do pagamento.</small>
       </div>
 
 
@@ -693,14 +693,14 @@
     <a href="#inicio"><span class="mobile-nav-icon">⌂</span><small>Início</small></a>
     <a href="#catalogo"><span class="mobile-nav-icon">▦</span><small>eBooks</small></a>
     <a href="#discord" class="mobile-discord-link"><span class="mobile-nav-icon">◉</span><small>Discord</small></a>
-    <button type="button" id="mobile-library-button"><span class="mobile-nav-icon">▣</span><small>Biblioteca</small></button>
+    <button type="button" id="mobile-library-button" hidden><span class="mobile-nav-icon">▣</span><small>Biblioteca</small></button>
   </nav>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.118.0"></script>
-  <script src="config.js?v=20261104-checkout-v8"></script>
-  <script src="auth.js?v=20261104-checkout-v8"></script>
-  <script src="reader-experience.js?v=20261104-checkout-v8"></script>
-  <script src="app.js?v=20261104-checkout-v8"></script>
+  <script src="config.js?v=20261104-guest-checkout-v1"></script>
+  <script src="auth.js?v=20261104-guest-checkout-v1"></script>
+  <script src="reader-experience.js?v=20261104-guest-checkout-v1"></script>
+  <script src="app.js?v=20261104-guest-checkout-v1"></script>
 
 
 </body>
