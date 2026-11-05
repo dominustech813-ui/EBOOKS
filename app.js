@@ -1619,7 +1619,7 @@
       if (data.approved && data.roleGranted) {
         clearTimeout(supportTeamPollTimer);
         if (supportTeamPaymentStatus) {
-          supportTeamPaymentStatus.textContent = "Pagamento confirmado. Cargo Suporte H ebooks entregue no Discord ✓";
+          supportTeamPaymentStatus.textContent = "Pagamento confirmado. Cargo Suporte aprendiz entregue no Discord ✓";
           supportTeamPaymentStatus.classList.remove("error");
         }
         if (supportTeamPixButton) {
